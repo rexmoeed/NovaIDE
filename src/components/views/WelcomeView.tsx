@@ -26,6 +26,7 @@ interface WelcomeViewProps {
 export const WelcomeView: React.FC<WelcomeViewProps> = ({ onOpenNewProject, onOpenShortcuts }) => {
   const {
     openLocalFolder,
+    openLocalFile,
     setIsCloneModalOpen,
     setIsProjectWizardOpen,
     setActiveView,
@@ -117,6 +118,25 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({ onOpenNewProject, onOp
               </h3>
               <p className="text-[11px] text-slate-400 mt-1">
                 Open any existing codebase or project folder on your computer.
+              </p>
+            </div>
+          </button>
+
+          {/* 2. Open Single File */}
+          <button
+            onClick={() => openLocalFile()}
+            className="group p-5 rounded-2xl bg-gradient-to-br from-purple-950/40 to-slate-900 border border-purple-500/30 hover:border-purple-500 text-left transition-all shadow-xl hover:shadow-purple-500/10 flex flex-col justify-between h-40 cursor-pointer"
+          >
+            <div className="w-9 h-9 rounded-xl bg-purple-600 flex items-center justify-center text-white shadow">
+              <FileCode className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-white group-hover:text-purple-300 transition-colors flex items-center justify-between">
+                <span>Open File...</span>
+                <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </h3>
+              <p className="text-[11px] text-slate-400 mt-1">
+                Open and edit a standalone source file or script directly.
               </p>
             </div>
           </button>

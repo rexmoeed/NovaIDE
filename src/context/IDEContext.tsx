@@ -887,7 +887,9 @@ export const IDEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           : (newVfs.readFile('package.json') !== null ? 'package.json'
           : (findFirstFile(convertedNodes) || 'README.md')))));
 
-      localStorage.setItem('novaide_last_workspace', folderPath);
+      if (folderPath && folderPath !== '.' && !folderPath.toLowerCase().includes('nova-ide-main')) {
+        localStorage.setItem('novaide_last_workspace', folderPath);
+      }
 
       // Check for persisted tabs and hot-exit buffers
       let restoredTabs: OpenTab[] = [];
@@ -990,31 +992,41 @@ export const IDEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [openFile]);
 
-  // Auto-connect to real local workspace on initial launch and restore previous session
+  // Auto-connect to real local workspace on initial launch only if an external user project was previously chosen
   useEffect(() => {
     let isMounted = true;
     const initHostWorkspace = async () => {
-      try {
-        const lastWorkspace = localStorage.getItem('novaide_last_workspace') || '.';
-        await openLocalFolder(lastWorkspace);
-      } catch (err) {
-        // ignore
-      } finally {
-        if (isMounted) {
-          try {
-            const lastPath = localStorage.getItem('novaide_last_workspace');
-            const savedTabs = lastPath ? localStorage.getItem(`novaide_tabs_${activeProject.id}`) : null;
-            if (savedTabs && JSON.parse(savedTabs).length > 0) {
-              setActiveView('editor');
-            } else {
-              setActiveView('welcome');
-            }
-          } catch {
+      const lastWorkspace = localStorage.getItem('novaide_last_workspace');
+      const isNovaRepo =
+        !lastWorkspace ||
+        lastWorkspace === '.' ||
+        lastWorkspace === './' ||
+        lastWorkspace.endsWith('Nova-IDE-main') ||
+        lastWorkspace.endsWith('Nova-IDE-main/') ||
+        lastWorkspace.endsWith('Nova-IDE-main\\') ||
+        lastWorkspace.endsWith('NovaIDE') ||
+        lastWorkspace.toLowerCase().includes('nova-ide-main');
+
+      if (!isNovaRepo && lastWorkspace) {
+        try {
+          const success = await openLocalFolder(lastWorkspace);
+          if (success && isMounted) {
             setActiveView('editor');
+            return;
           }
+        } catch {
+          // ignore error and fall through to welcome
         }
       }
+
+      // If no valid user project is loaded, present the Welcome screen and ask the user what to open!
+      if (isMounted) {
+        setActiveView('welcome');
+        // Do not auto-open Nova IDE repo; prompt the user with in-app folder picker
+        setIsOpenFolderModalOpen(true);
+      }
     };
+
     initHostWorkspace();
     return () => { isMounted = false; };
   }, [openLocalFolder]);
