@@ -479,7 +479,7 @@ export const AIOrchestratorPanel: React.FC = () => {
         ...prev,
         {
           role: 'assistant',
-          content: `${grounded.directAnswer}\n\n${replyText}`,
+          content: replyText || 'Understood. How would you like to proceed?',
           agent: replyAgent,
           groundedResponse: grounded,
           dataFlow: grounded.dataFlow,
@@ -490,7 +490,7 @@ export const AIOrchestratorPanel: React.FC = () => {
         ...prev,
         {
           role: 'assistant',
-          content: `${grounded.directAnswer}\n\n*(Provider response: ${err?.message || 'Ready'})*`,
+          content: `⚠️ ${err?.message || 'Failed to receive model response. Please check your AI API key and connection.'}`,
           agent: activeAgent,
           groundedResponse: grounded,
           dataFlow: grounded.dataFlow,

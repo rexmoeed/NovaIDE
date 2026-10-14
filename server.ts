@@ -21,27 +21,328 @@ const PORT = Number(process.env.PORT) || 3000;
 app.use(express.json({ limit: '15mb' }));
 
 // Server-side initialization of GoogleGenAI using official guidelines
-const apiKey = process.env.GEMINI_API_KEY || '';
+let currentApiKey = process.env.GEMINI_API_KEY || '';
 let aiClient: GoogleGenAI | null = null;
 
-if (apiKey) {
-  aiClient = new GoogleGenAI({
-    apiKey: apiKey,
-    httpOptions: {
-      headers: {
-        'User-Agent': 'aistudio-build',
+function initGenAIClient(key: string) {
+  if (!key) {
+    aiClient = null;
+    return;
+  }
+  try {
+    aiClient = new GoogleGenAI({
+      apiKey: key,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        },
       },
-    },
-  });
+    });
+    currentApiKey = key;
+  } catch (err) {
+    console.error('Failed to initialize GoogleGenAI:', err);
+  }
+}
+
+if (currentApiKey) {
+  initGenAIClient(currentApiKey);
+}
+
+export function getGenAIClient(req?: Request): GoogleGenAI | null {
+  const reqKey = (req?.headers['x-api-key'] as string) || req?.body?.apiKey || currentApiKey || process.env.GEMINI_API_KEY || '';
+  if (!reqKey) return null;
+  if (aiClient && reqKey === currentApiKey) return aiClient;
+  try {
+    return new GoogleGenAI({
+      apiKey: reqKey,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        },
+      },
+    });
+  } catch {
+    return null;
+  }
 }
 
 // Health check endpoint
 app.get('/api/health', (req: Request, res: Response) => {
+  const reqKey = (req.headers['x-api-key'] as string) || currentApiKey || process.env.GEMINI_API_KEY || '';
   res.json({
     status: 'ok',
-    hasApiKey: !!apiKey,
+    hasApiKey: !!reqKey,
     defaultModel: 'gemini-3.8-flash',
   });
+});
+
+// Configure & persist API Key
+app.post('/api/ai/config', async (req: Request, res: Response) => {
+  try {
+    const { apiKey: newKey } = req.body;
+    if (typeof newKey === 'string' && newKey.trim()) {
+      const cleanKey = newKey.trim();
+      process.env.GEMINI_API_KEY = cleanKey;
+      initGenAIClient(cleanKey);
+
+      // Persist to .env file in workspace root
+      const envPath = path.resolve(process.cwd(), '.env');
+      let envContent = '';
+      if (fs.existsSync(envPath)) {
+        envContent = fs.readFileSync(envPath, 'utf8');
+        if (/GEMINI_API_KEY=.*/.test(envContent)) {
+          envContent = envContent.replace(/GEMINI_API_KEY=.*/, `GEMINI_API_KEY="${cleanKey}"`);
+        } else {
+          envContent += `\nGEMINI_API_KEY="${cleanKey}"\n`;
+        }
+      } else {
+        envContent = `GEMINI_API_KEY="${cleanKey}"\nPORT=3000\n`;
+      }
+      fs.writeFileSync(envPath, envContent, 'utf8');
+
+      return res.json({ success: true, hasApiKey: true, message: 'API key successfully configured and saved to .env.' });
+    }
+    return res.status(400).json({ success: false, message: 'Invalid or empty API key provided.' });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err?.message || 'Failed to save configuration.' });
+  }
+});
+
+// Real AI Provider Connection Verification
+app.post('/api/ai/provider/test', async (req: Request, res: Response) => {
+  const { providerId = 'gemini', apiKey: inputKey, baseUrl, model, testType = 'auth' } = req.body;
+  const key = inputKey || (providerId === 'gemini' ? (currentApiKey || process.env.GEMINI_API_KEY) : '');
+  const startTime = Date.now();
+
+  try {
+    if (providerId === 'gemini') {
+      if (!key) {
+        return res.json({
+          providerId,
+          success: false,
+          testType,
+          latencyMs: 0,
+          message: 'No Google Gemini API key provided. Please input your API key.',
+          timestamp: Date.now(),
+        });
+      }
+
+      const client = new GoogleGenAI({
+        apiKey: key,
+        httpOptions: { headers: { 'User-Agent': 'aistudio-build' } },
+      });
+
+      const response = await client.models.generateContent({
+        model: model || 'gemini-3.8-flash',
+        contents: 'Respond with exactly the single word "VERIFIED".',
+        config: { maxOutputTokens: 10, temperature: 0.1 },
+      });
+
+      const latencyMs = Date.now() - startTime;
+      return res.json({
+        providerId,
+        success: true,
+        testType,
+        latencyMs,
+        message: `Connected successfully to Google Gemini (${model || 'gemini-3.8-flash'}) in ${latencyMs}ms. Response: ${response.text?.trim() || 'OK'}`,
+        timestamp: Date.now(),
+      });
+    }
+
+    // Anthropic
+    if (providerId === 'anthropic') {
+      if (!key) {
+        return res.json({ providerId, success: false, testType, latencyMs: 0, message: 'Anthropic API key required.', timestamp: Date.now() });
+      }
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': key,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: model || 'claude-3-7-sonnet-20250219',
+          max_tokens: 10,
+          messages: [{ role: 'user', content: 'Say OK' }],
+        }),
+      });
+      const latencyMs = Date.now() - startTime;
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        return res.json({ providerId, success: false, testType, latencyMs, message: errorData?.error?.message || `HTTP ${response.status}`, timestamp: Date.now() });
+      }
+      return res.json({ providerId, success: true, testType, latencyMs, message: `Connected to Anthropic in ${latencyMs}ms.`, timestamp: Date.now() });
+    }
+
+    // OpenAI-compatible providers: OpenAI, OpenRouter, DeepSeek, Groq, Ollama, LMStudio, Local
+    const defaultBaseUrl = providerId === 'openrouter' ? 'https://openrouter.ai/api/v1' :
+                           providerId === 'deepseek' ? 'https://api.deepseek.com/v1' :
+                           providerId === 'groq' ? 'https://api.groq.com/openai/v1' :
+                           providerId === 'ollama' ? 'http://localhost:11434/v1' :
+                           providerId === 'lmstudio' ? 'http://localhost:1234/v1' :
+                           'https://api.openai.com/v1';
+    const targetUrl = `${(baseUrl || defaultBaseUrl).replace(/\/+$/, '')}/chat/completions`;
+
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (key) headers['Authorization'] = `Bearer ${key}`;
+    if (providerId === 'openrouter') {
+      headers['HTTP-Referer'] = 'https://novaide.studio';
+      headers['X-Title'] = 'Nova IDE';
+    }
+
+    const testRes = await fetch(targetUrl, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model: model || (providerId === 'openrouter' ? 'anthropic/claude-3.5-sonnet' : 'gpt-4o-mini'),
+        messages: [{ role: 'user', content: 'Respond with OK' }],
+        max_tokens: 10,
+      }),
+    });
+
+    const latencyMs = Date.now() - startTime;
+    if (!testRes.ok) {
+      const err = await testRes.json().catch(() => ({}));
+      return res.json({
+        providerId,
+        success: false,
+        testType,
+        latencyMs,
+        message: err?.error?.message || `Provider responded with status ${testRes.status}`,
+        timestamp: Date.now(),
+      });
+    }
+
+    return res.json({
+      providerId,
+      success: true,
+      testType,
+      latencyMs,
+      message: `Verified connection to ${providerId} endpoint in ${latencyMs}ms.`,
+      timestamp: Date.now(),
+    });
+  } catch (error: any) {
+    return res.json({
+      providerId,
+      success: false,
+      testType,
+      latencyMs: Date.now() - startTime,
+      message: error?.message || 'Connection test failed',
+      timestamp: Date.now(),
+    });
+  }
+});
+
+// Unified Provider Chat Endpoint
+app.post('/api/ai/provider/chat', async (req: Request, res: Response) => {
+  const { providerId = 'gemini', apiKey: inputKey, baseUrl, model, messages = [], systemPrompt, temperature = 0.5, maxTokens = 4096 } = req.body;
+  const key = inputKey || (providerId === 'gemini' ? (currentApiKey || process.env.GEMINI_API_KEY) : '');
+
+  try {
+    if (providerId === 'gemini') {
+      const client = getGenAIClient(req) || (key ? new GoogleGenAI({ apiKey: key, httpOptions: { headers: { 'User-Agent': 'aistudio-build' } } }) : null);
+      if (!client) {
+        return res.status(400).json({ error: 'NO_API_KEY', reply: 'Please configure your Google Gemini API key in Settings -> AI Providers (BYOK).' });
+      }
+
+      const conversationHistory = messages.map((m: any) => `${m.role.toUpperCase()}: ${m.content}`).join('\n\n');
+      const prompt = systemPrompt ? `${systemPrompt}\n\nCONVERSATION:\n${conversationHistory}\n\nASSISTANT:` : conversationHistory;
+
+      const response = await client.models.generateContent({
+        model: model || 'gemini-3.8-flash',
+        contents: prompt,
+        config: { temperature, maxOutputTokens: maxTokens },
+      });
+
+      return res.json({
+        reply: response.text || '',
+        providerId,
+        model: model || 'gemini-3.8-flash',
+      });
+    }
+
+    // Anthropic
+    if (providerId === 'anthropic') {
+      if (!key) return res.status(400).json({ error: 'NO_API_KEY', reply: 'Anthropic API key required.' });
+
+      const anthropicMessages = messages.map((m: any) => ({
+        role: m.role === 'assistant' ? 'assistant' : 'user',
+        content: m.content,
+      }));
+
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': key,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: model || 'claude-3-7-sonnet-20250219',
+          system: systemPrompt,
+          messages: anthropicMessages,
+          max_tokens: maxTokens,
+          temperature,
+        }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err?.error?.message || `Anthropic returned ${response.status}`);
+      }
+
+      const data: any = await response.json();
+      const reply = data?.content?.[0]?.text || '';
+      return res.json({ reply, providerId, model: model || 'claude-3-7-sonnet-20250219' });
+    }
+
+    // OpenAI-compatible format
+    const defaultBaseUrl = providerId === 'openrouter' ? 'https://openrouter.ai/api/v1' :
+                           providerId === 'deepseek' ? 'https://api.deepseek.com/v1' :
+                           providerId === 'groq' ? 'https://api.groq.com/openai/v1' :
+                           providerId === 'ollama' ? 'http://localhost:11434/v1' :
+                           providerId === 'lmstudio' ? 'http://localhost:1234/v1' :
+                           'https://api.openai.com/v1';
+    const targetUrl = `${(baseUrl || defaultBaseUrl).replace(/\/+$/, '')}/chat/completions`;
+
+    const formattedMessages = [];
+    if (systemPrompt) {
+      formattedMessages.push({ role: 'system', content: systemPrompt });
+    }
+    for (const m of messages) {
+      formattedMessages.push({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content });
+    }
+
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (key) headers['Authorization'] = `Bearer ${key}`;
+    if (providerId === 'openrouter') {
+      headers['HTTP-Referer'] = 'https://novaide.studio';
+      headers['X-Title'] = 'Nova IDE';
+    }
+
+    const completionRes = await fetch(targetUrl, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model: model || (providerId === 'openrouter' ? 'anthropic/claude-3.5-sonnet' : 'gpt-4o'),
+        messages: formattedMessages,
+        temperature,
+        max_tokens: maxTokens,
+      }),
+    });
+
+    if (!completionRes.ok) {
+      const err = await completionRes.json().catch(() => ({}));
+      throw new Error(err?.error?.message || `Provider request returned status ${completionRes.status}`);
+    }
+
+    const data: any = await completionRes.json();
+    const reply = data?.choices?.[0]?.message?.content || '';
+    return res.json({ reply, providerId, model: data?.model || model });
+  } catch (err: any) {
+    return res.status(500).json({ error: err?.message || 'Provider chat failed', reply: `Error: ${err?.message || 'Chat failed'}` });
+  }
 });
 
 // Helper to fallback when API key is missing or model errors
@@ -75,8 +376,9 @@ function getMockOrFallbackPlan(goal: string, stack: string) {
 // 1. AI Orchestrator: Project Planning & Task Generation
 app.post('/api/ai/plan', async (req: Request, res: Response) => {
   const { goal, currentStack, filesSummary, model = 'gemini-3.8-flash' } = req.body;
+  const client = getGenAIClient(req) || aiClient;
 
-  if (!aiClient) {
+  if (!client) {
     return res.json(getMockOrFallbackPlan(goal, currentStack));
   }
 
@@ -113,7 +415,7 @@ Format:
   ]
 }`;
 
-    const response = await aiClient.models.generateContent({
+    const response = await client.models.generateContent({
       model: model,
       contents: prompt,
       config: {
@@ -134,8 +436,9 @@ Format:
 // 2. AI Code Generation & File Modification
 app.post('/api/ai/generate-code', async (req: Request, res: Response) => {
   const { taskTitle, taskDetails, filePath, currentCode, projectContext, agentRole, model = 'gemini-3.8-flash' } = req.body;
+  const client = getGenAIClient(req) || aiClient;
 
-  if (!aiClient) {
+  if (!client) {
     return res.json({
       code: currentCode ? `${currentCode}\n// Added feature for ${taskTitle}` : `// File: ${filePath}\n// Generated for ${taskTitle}\nexport const ready = true;\n`,
       explanation: `Generated baseline implementation for "${taskTitle}".`,
@@ -167,7 +470,7 @@ Format:
   "tests": "Unit test code covering this file"
 }`;
 
-    const response = await aiClient.models.generateContent({
+    const response = await client.models.generateContent({
       model: model,
       contents: prompt,
       config: {
@@ -191,11 +494,13 @@ Format:
 // 3. AI Chat & Code Assistance
 app.post('/api/ai/chat', async (req: Request, res: Response) => {
   const { messages, activeFile, fileContent, projectSummary, agentRole = 'Developer', model = 'gemini-3.8-flash', images = [] } = req.body;
+  const client = getGenAIClient(req) || aiClient;
 
-  if (!aiClient) {
-    const lastUserMsg = messages[messages.length - 1]?.content || 'Hello';
-    return res.json({
-      reply: `[${agentRole} Agent]: I analyzed your request ("${lastUserMsg}"). You are currently viewing \`${activeFile || 'project root'}\`${images && images.length > 0 ? ` (with ${images.length} attached image(s))` : ''}. In Autonomous mode, I can plan tasks, generate code across files, execute terminal checks, and run unit tests.`,
+  if (!client) {
+    return res.status(400).json({
+      error: 'NO_API_KEY',
+      hasApiKey: false,
+      reply: '⚠️ **No AI Provider API key configured.**\n\nPlease enter your Google Gemini API key (or OpenRouter/Claude/OpenAI key) in **Settings → AI Providers (BYOK)** to unlock live AI responses.',
       toolCalls: []
     });
   }
@@ -210,7 +515,7 @@ Project Summary: ${projectSummary || 'Web / Mobile / Full-Stack workspace'}
 Active File Content:
 ${fileContent ? fileContent.slice(0, 3000) : '(None)'}
 
-Reply to the user clearly. You may suggest code blocks, explain architecture, or propose specific tool actions (e.g. create_file, edit_file, run_test).`;
+Reply to the user clearly and concisely. You may suggest code blocks, explain architecture, or propose specific tool actions (e.g. create_file, edit_file, run_test).`;
 
     const fullPrompt = `${systemPrompt}\n\nCONVERSATION:\n${conversationHistory}\n\nASSISTANT:`;
 
@@ -243,7 +548,7 @@ Reply to the user clearly. You may suggest code blocks, explain architecture, or
       }
     }
 
-    const response = await aiClient.models.generateContent({
+    const response = await client.models.generateContent({
       model: model,
       contents: contentsPayload,
       config: {
@@ -256,10 +561,10 @@ Reply to the user clearly. You may suggest code blocks, explain architecture, or
       agent: agentRole,
     });
   } catch (error: any) {
-    console.warn('AI chat error (falling back):', error?.message);
-    const lastUserMsg = (messages && messages[messages.length - 1]?.content) || 'your instruction';
-    return res.json({
-      reply: `[${agentRole} Agent]: I received "${lastUserMsg}". (Local autonomous mode active). I am ready to inspect local workspace files, scaffold templates, run terminal commands, and review project architectures.`,
+    console.warn('AI chat error:', error?.message);
+    return res.status(500).json({
+      error: error?.message || 'Chat generation failed',
+      reply: `❌ AI Generation Error: ${error?.message || 'Request failed. Please verify your API key and network connection.'}`,
       agent: agentRole,
     });
   }
@@ -268,8 +573,9 @@ Reply to the user clearly. You may suggest code blocks, explain architecture, or
 // 4. AI Automated Debugger & Self-Healing
 app.post('/api/ai/debug', async (req: Request, res: Response) => {
   const { errorLog, failingFile, fileContent, testOutput, model = 'gemini-3.8-flash' } = req.body;
+  const client = getGenAIClient(req) || aiClient;
 
-  if (!aiClient) {
+  if (!client) {
     return res.json({
       rootCause: 'Type error or missing property in input handling.',
       explanation: 'Inspected stack trace and identified probable runtime null dereference.',
@@ -302,7 +608,7 @@ Output valid JSON only:
   "confidence": 0.98
 }`;
 
-    const response = await aiClient.models.generateContent({
+    const response = await client.models.generateContent({
       model: model,
       contents: prompt,
       config: {
@@ -328,8 +634,9 @@ Output valid JSON only:
 // 5. AI Code Reviewer & Security Audit
 app.post('/api/ai/code-review', async (req: Request, res: Response) => {
   const { files, model = 'gemini-3.8-flash' } = req.body;
+  const client = getGenAIClient(req) || aiClient;
 
-  if (!aiClient) {
+  if (!client) {
     return res.json({
       overallScore: 92,
       summary: 'Codebase passes fundamental linting and type checks.',
@@ -365,7 +672,7 @@ Output valid JSON only:
   ]
 }`;
 
-    const response = await aiClient.models.generateContent({
+    const response = await client.models.generateContent({
       model: model,
       contents: prompt,
       config: {
@@ -379,272 +686,6 @@ Output valid JSON only:
   } catch (error: any) {
     console.error('Code review error:', error?.message);
     return res.status(500).json({ error: error?.message || 'Review failed' });
-  }
-});
-
-// 5. Real Multi-Provider Connection Test (BYOK - OpenAI, Anthropic, Gemini, DeepSeek, Groq, Ollama, etc.)
-app.post('/api/ai/provider/test', async (req: Request, res: Response) => {
-  const { providerId, apiKey: key, baseUrl, model, headers = {} } = req.body;
-  const startTime = Date.now();
-
-  try {
-    if (providerId === 'gemini') {
-      if (key && key !== apiKey) {
-        const customClient = new GoogleGenAI({ apiKey: key });
-        await customClient.models.generateContent({
-          model: model || 'gemini-2.5-flash',
-          contents: 'ping',
-        });
-      } else if (aiClient) {
-        await aiClient.models.generateContent({
-          model: model || 'gemini-2.5-flash',
-          contents: 'ping',
-        });
-      } else {
-        throw new Error('Google Gemini API key not configured on server.');
-      }
-      return res.json({
-        ok: true,
-        providerId,
-        latencyMs: Date.now() - startTime,
-        message: 'Google Gemini connected and authenticated successfully.',
-      });
-    }
-
-    if (providerId === 'anthropic') {
-      if (!key) throw new Error('Anthropic API key required.');
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'x-api-key': key,
-          'anthropic-version': '2023-06-01',
-          'content-type': 'application/json',
-          ...headers,
-        },
-        body: JSON.stringify({
-          model: model || 'claude-3-5-haiku-20241022',
-          max_tokens: 10,
-          messages: [{ role: 'user', content: 'ping' }],
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Anthropic error (${response.status}): ${errorText.slice(0, 150)}`);
-      }
-
-      return res.json({
-        ok: true,
-        providerId,
-        latencyMs: Date.now() - startTime,
-        message: 'Anthropic Claude connected and verified.',
-      });
-    }
-
-    // Generic OpenAI-compatible providers
-    let targetUrl = baseUrl;
-    if (!targetUrl) {
-      if (providerId === 'openai') targetUrl = 'https://api.openai.com/v1';
-      else if (providerId === 'deepseek') targetUrl = 'https://api.deepseek.com';
-      else if (providerId === 'mistral') targetUrl = 'https://api.mistral.ai/v1';
-      else if (providerId === 'xai') targetUrl = 'https://api.x.ai/v1';
-      else if (providerId === 'groq') targetUrl = 'https://api.groq.com/openai/v1';
-      else if (providerId === 'together') targetUrl = 'https://api.together.xyz/v1';
-      else if (providerId === 'fireworks') targetUrl = 'https://api.fireworks.ai/inference/v1';
-      else if (providerId === 'openrouter') targetUrl = 'https://openrouter.ai/api/v1';
-      else if (providerId === 'ollama') targetUrl = 'http://localhost:11434/v1';
-      else if (providerId === 'lmstudio') targetUrl = 'http://localhost:1234/v1';
-      else if (providerId === 'local') targetUrl = 'http://localhost:8000/v1';
-      else targetUrl = 'https://api.openai.com/v1';
-    }
-
-    const cleanBase = targetUrl.replace(/\/+$/, '');
-    const endpoint = `${cleanBase}/chat/completions`;
-
-    const requestHeaders: Record<string, string> = {
-      'content-type': 'application/json',
-      ...headers,
-    };
-    if (key) {
-      requestHeaders['authorization'] = `Bearer ${key}`;
-    }
-
-    const testModel = model || (providerId === 'openai' ? 'gpt-4o-mini' : 'default');
-
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: requestHeaders,
-      body: JSON.stringify({
-        model: testModel,
-        messages: [{ role: 'user', content: 'ping' }],
-        max_tokens: 5,
-      }),
-    });
-
-    if (!response.ok) {
-      const errBody = await response.text();
-      let errorCategory = 'Provider error';
-      if (response.status === 401) errorCategory = 'Invalid API key or unauthorized';
-      else if (response.status === 404) errorCategory = 'Model or endpoint not found';
-      else if (response.status === 429) errorCategory = 'Rate limit or quota exceeded';
-
-      throw new Error(`${errorCategory} (${response.status}): ${errBody.slice(0, 160)}`);
-    }
-
-    return res.json({
-      ok: true,
-      providerId,
-      latencyMs: Date.now() - startTime,
-      message: `Successfully connected to ${providerId.toUpperCase()} at ${cleanBase}.`,
-    });
-  } catch (err: any) {
-    return res.status(400).json({
-      ok: false,
-      providerId,
-      latencyMs: Date.now() - startTime,
-      error: err?.message || 'Connection test failed',
-    });
-  }
-});
-
-// 6. Real Multi-Provider Unified Chat Execution
-app.post('/api/ai/provider/chat', async (req: Request, res: Response) => {
-  const { providerId = 'gemini', apiKey: key, baseUrl, model, messages = [], systemPrompt, temperature = 0.4, maxTokens = 4096, headers = {} } = req.body;
-
-  try {
-    if (providerId === 'gemini') {
-      const client = key && key !== apiKey ? new GoogleGenAI({ apiKey: key }) : aiClient;
-      if (!client) {
-        throw new Error('Gemini API key not configured.');
-      }
-
-      const promptParts = [systemPrompt ? `SYSTEM:\n${systemPrompt}\n\n` : ''];
-      for (const m of messages) {
-        promptParts.push(`${m.role.toUpperCase()}: ${m.content}`);
-      }
-      promptParts.push('ASSISTANT:');
-
-      const geminiRes = await client.models.generateContent({
-        model: model || 'gemini-3.8-flash',
-        contents: promptParts.join('\n\n'),
-        config: {
-          temperature,
-          maxOutputTokens: maxTokens,
-        },
-      });
-
-      return res.json({
-        reply: geminiRes.text || '',
-        model: model || 'gemini-3.8-flash',
-        providerId: 'gemini',
-        usage: { promptTokens: 120, completionTokens: 80, totalTokens: 200 },
-      });
-    }
-
-    if (providerId === 'anthropic') {
-      if (!key) throw new Error('Anthropic API key required.');
-      const anthropicMessages = messages.map((m: any) => ({
-        role: m.role === 'assistant' ? 'assistant' : 'user',
-        content: m.content,
-      }));
-
-      const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'x-api-key': key,
-          'anthropic-version': '2023-06-01',
-          'content-type': 'application/json',
-          ...headers,
-        },
-        body: JSON.stringify({
-          model: model || 'claude-3-5-haiku-20241022',
-          max_tokens: maxTokens,
-          system: systemPrompt || undefined,
-          messages: anthropicMessages,
-        }),
-      });
-
-      if (!anthropicRes.ok) {
-        const err = await anthropicRes.text();
-        throw new Error(`Anthropic error (${anthropicRes.status}): ${err.slice(0, 200)}`);
-      }
-
-      const anthropicData = (await anthropicRes.json()) as any;
-      const reply = anthropicData.content?.map((c: any) => c.text || '').join('\n') || '';
-
-      return res.json({
-        reply,
-        model: anthropicData.model || model,
-        providerId: 'anthropic',
-        usage: {
-          promptTokens: anthropicData.usage?.input_tokens || 100,
-          completionTokens: anthropicData.usage?.output_tokens || 50,
-          totalTokens: (anthropicData.usage?.input_tokens || 100) + (anthropicData.usage?.output_tokens || 50),
-        },
-      });
-    }
-
-    // OpenAI-compatible format
-    let targetUrl = baseUrl;
-    if (!targetUrl) {
-      if (providerId === 'openai') targetUrl = 'https://api.openai.com/v1';
-      else if (providerId === 'deepseek') targetUrl = 'https://api.deepseek.com';
-      else if (providerId === 'mistral') targetUrl = 'https://api.mistral.ai/v1';
-      else if (providerId === 'xai') targetUrl = 'https://api.x.ai/v1';
-      else if (providerId === 'groq') targetUrl = 'https://api.groq.com/openai/v1';
-      else if (providerId === 'together') targetUrl = 'https://api.together.xyz/v1';
-      else if (providerId === 'fireworks') targetUrl = 'https://api.fireworks.ai/inference/v1';
-      else if (providerId === 'openrouter') targetUrl = 'https://openrouter.ai/api/v1';
-      else if (providerId === 'ollama') targetUrl = 'http://localhost:11434/v1';
-      else if (providerId === 'lmstudio') targetUrl = 'http://localhost:1234/v1';
-      else targetUrl = 'https://api.openai.com/v1';
-    }
-
-    const cleanBase = targetUrl.replace(/\/+$/, '');
-    const endpoint = `${cleanBase}/chat/completions`;
-
-    const requestHeaders: Record<string, string> = {
-      'content-type': 'application/json',
-      ...headers,
-    };
-    if (key) {
-      requestHeaders['authorization'] = `Bearer ${key}`;
-    }
-
-    const payloadMessages = [];
-    if (systemPrompt) {
-      payloadMessages.push({ role: 'system', content: systemPrompt });
-    }
-    payloadMessages.push(...messages);
-
-    const compRes = await fetch(endpoint, {
-      method: 'POST',
-      headers: requestHeaders,
-      body: JSON.stringify({
-        model: model || 'gpt-4o-mini',
-        messages: payloadMessages,
-        temperature,
-        max_tokens: maxTokens,
-      }),
-    });
-
-    if (!compRes.ok) {
-      const err = await compRes.text();
-      throw new Error(`${providerId.toUpperCase()} error (${compRes.status}): ${err.slice(0, 200)}`);
-    }
-
-    const compData = (await compRes.json()) as any;
-    const reply = compData.choices?.[0]?.message?.content || '';
-
-    return res.json({
-      reply,
-      model: compData.model || model,
-      providerId,
-      usage: compData.usage || { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
-    });
-  } catch (err: any) {
-    console.error('Provider chat error:', err?.message);
-    return res.status(500).json({ error: err?.message || 'Chat generation failed' });
   }
 });
 

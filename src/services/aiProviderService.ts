@@ -859,21 +859,38 @@ export class AIProviderService {
 
         if (testRes.ok) {
           const testData = await testRes.json();
-          this.updateProvider(providerId, {
-            status: 'connected',
-            isVerified: true,
-            enabled: true,
-            lastTested: Date.now(),
-            error: undefined,
-          });
-          return {
-            providerId,
-            success: true,
-            testType,
-            latencyMs: testData.latencyMs || (Date.now() - startTime),
-            message: testData.message || `Connected successfully to ${provider.name}.`,
-            timestamp: Date.now(),
-          };
+          if (testData.success) {
+            this.updateProvider(providerId, {
+              status: 'connected',
+              isVerified: true,
+              enabled: true,
+              lastTested: Date.now(),
+              error: undefined,
+            });
+            return {
+              providerId,
+              success: true,
+              testType,
+              latencyMs: testData.latencyMs || (Date.now() - startTime),
+              message: testData.message || `Connected successfully to ${provider.name}.`,
+              timestamp: Date.now(),
+            };
+          } else {
+            const errMsg = testData.message || 'Verification failed';
+            this.updateProvider(providerId, {
+              status: 'error',
+              error: errMsg,
+              lastTested: Date.now(),
+            });
+            return {
+              providerId,
+              success: false,
+              testType,
+              latencyMs: testData.latencyMs || (Date.now() - startTime),
+              message: errMsg,
+              timestamp: Date.now(),
+            };
+          }
         } else {
           const errData = await testRes.json().catch(() => ({}));
           const errMsg = errData.error || `Connection test failed with HTTP ${testRes.status}`;

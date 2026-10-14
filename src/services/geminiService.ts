@@ -44,9 +44,45 @@ export interface AICodeReviewResponse {
 }
 
 export class GeminiService {
+  public static getApiKey(): string {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const customKey = localStorage.getItem('nova_gemini_api_key');
+        if (customKey) return customKey;
+        const providersRaw = localStorage.getItem('nova_ai_providers_v2');
+        if (providersRaw) {
+          const list = JSON.parse(providersRaw);
+          const gemini = list.find((p: any) => p.id === 'gemini');
+          if (gemini?.apiKey) return gemini.apiKey;
+        }
+      }
+    } catch {}
+    return '';
+  }
+
+  public static async saveApiKey(apiKey: string): Promise<boolean> {
+    try {
+      const cleanKey = apiKey.trim();
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('nova_gemini_api_key', cleanKey);
+      }
+      const res = await fetch('/api/ai/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apiKey: cleanKey }),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
   public static async checkHealth(): Promise<{ status: string; hasApiKey: boolean; defaultModel: string }> {
     try {
-      const res = await fetch('/api/health');
+      const apiKey = this.getApiKey();
+      const res = await fetch('/api/health', {
+        headers: apiKey ? { 'x-api-key': apiKey } : undefined,
+      });
       if (!res.ok) throw new Error('Health check failed');
       return await res.json();
     } catch {
@@ -59,10 +95,15 @@ export class GeminiService {
     currentStack?: string;
     filesSummary?: string;
     model?: string;
+    apiKey?: string;
   }): Promise<AIPlanResponse> {
+    const key = params.apiKey || this.getApiKey();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (key) headers['x-api-key'] = key;
+
     const res = await fetch('/api/ai/plan', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(params),
     });
     if (!res.ok) throw new Error(`Planning failed: ${res.statusText}`);
@@ -77,10 +118,15 @@ export class GeminiService {
     projectContext?: string;
     agentRole?: string;
     model?: string;
+    apiKey?: string;
   }): Promise<AICodeResponse> {
+    const key = params.apiKey || this.getApiKey();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (key) headers['x-api-key'] = key;
+
     const res = await fetch('/api/ai/generate-code', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(params),
     });
     if (!res.ok) throw new Error(`Code generation failed: ${res.statusText}`);
@@ -94,15 +140,23 @@ export class GeminiService {
     projectSummary?: string;
     agentRole?: string;
     model?: string;
+    apiKey?: string;
     images?: Array<{ data: string; mimeType: string } | string>;
   }): Promise<{ reply: string; agent?: string }> {
+    const key = params.apiKey || this.getApiKey();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (key) headers['x-api-key'] = key;
+
     const res = await fetch('/api/ai/chat', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(params),
     });
-    if (!res.ok) throw new Error(`Chat request failed: ${res.statusText}`);
-    return await res.json();
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.error || data.reply || `Chat request failed (${res.status})`);
+    }
+    return data;
   }
 
   public static async debugIssue(params: {
@@ -111,10 +165,15 @@ export class GeminiService {
     fileContent?: string;
     testOutput?: string;
     model?: string;
+    apiKey?: string;
   }): Promise<AIDebugResponse> {
+    const key = params.apiKey || this.getApiKey();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (key) headers['x-api-key'] = key;
+
     const res = await fetch('/api/ai/debug', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(params),
     });
     if (!res.ok) throw new Error(`Debug request failed: ${res.statusText}`);
@@ -124,10 +183,15 @@ export class GeminiService {
   public static async reviewCode(params: {
     files: Array<{ path: string; content: string }>;
     model?: string;
+    apiKey?: string;
   }): Promise<AICodeReviewResponse> {
+    const key = params.apiKey || this.getApiKey();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (key) headers['x-api-key'] = key;
+
     const res = await fetch('/api/ai/code-review', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(params),
     });
     if (!res.ok) throw new Error(`Code review request failed: ${res.statusText}`);
