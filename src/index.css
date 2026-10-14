@@ -1,0 +1,447 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  /* Default Design Tokens (Antigravity Obsidian / Cursor Dark) */
+  --ide-bg: #090a10;
+  --ide-surface: #0e111a;
+  --ide-surface-elevated: #151926;
+  --ide-border: #1e2438;
+  --ide-border-muted: #141826;
+  --ide-text: #f1f5f9;
+  --ide-text-muted: #94a3b8;
+  --ide-accent: #6366f1;
+  --ide-accent-hover: #4f46e5;
+  --ide-selection: rgba(99, 102, 241, 0.28);
+
+  --ide-editor-bg: #090a10;
+  --ide-editor-gutter: #0c0e16;
+  --ide-editor-line-highlight: #131726;
+  --ide-sidebar-bg: #0d0f18;
+  --ide-terminal-bg: #07080e;
+  --ide-terminal-text: #e2e8f0;
+
+  --ide-scrollbar-track: transparent;
+  --ide-scrollbar-thumb: rgba(148, 163, 184, 0.22);
+  --ide-scrollbar-thumb-hover: rgba(148, 163, 184, 0.45);
+  --ide-scrollbar-thumb-active: #6366f1;
+  --ide-scrollbar-size: 8px;
+  --ide-scrollbar-size-slim: 6px;
+
+  --ide-error: #f43f5e;
+  --ide-warning: #f59e0b;
+  --ide-success: #10b981;
+  --ide-info: #38bdf8;
+
+  --ide-row-height: 28px;
+  --ide-item-padding: 5px 8px;
+  --ide-font-size-base: 12px;
+
+  color-scheme: dark;
+}
+
+/* Light Mode Overrides */
+html.light,
+[data-theme='light'] {
+  color-scheme: light;
+  --ide-bg: #f8fafc;
+  --ide-surface: #ffffff;
+  --ide-surface-elevated: #f1f5f9;
+  --ide-border: #e2e8f0;
+  --ide-border-muted: #edf2f7;
+  --ide-text: #0f172a;
+  --ide-text-muted: #64748b;
+
+  --ide-editor-bg: #ffffff;
+  --ide-editor-gutter: #f8fafc;
+  --ide-editor-line-highlight: #f1f5f9;
+  --ide-sidebar-bg: #f8fafc;
+  --ide-terminal-bg: #f8fafc;
+  --ide-terminal-text: #1e293b;
+
+  --ide-scrollbar-track: transparent;
+  --ide-scrollbar-thumb: rgba(100, 116, 139, 0.28);
+  --ide-scrollbar-thumb-hover: rgba(100, 116, 139, 0.52);
+  --ide-scrollbar-thumb-active: rgba(79, 70, 229, 0.65);
+}
+
+/* Base Root & Body Styling — Dynamic Theme Canvas */
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+body,
+html.light body,
+html.dark body,
+[data-theme] body {
+  background-color: var(--ide-bg, #090a10);
+  color: var(--ide-text, #f1f5f9);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Inter, Helvetica, Arial, sans-serif;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================
+   DYNAMIC THEME SURFACE & BORDER BINDINGS
+   Transforms all hardcoded slate/white utility classes to match
+   the active Antigravity IDE theme's exact color palette tokens
+   ============================================================ */
+
+/* Dark themes: Map slate utility classes to active theme variables */
+.dark .bg-slate-950,
+.dark .bg-slate-900,
+.dark .dark\:bg-slate-950,
+.dark .dark\:bg-slate-900,
+.dark .dark\:bg-slate-900\/90,
+.dark .dark\:bg-slate-900\/95,
+.dark .dark\:bg-slate-900\/80,
+.dark .dark\:bg-slate-950\/60,
+.dark .dark\:bg-slate-950\/80,
+.dark .dark\:bg-slate-950\/90 {
+  background-color: var(--ide-surface) !important;
+}
+
+.dark .bg-slate-850,
+.dark .bg-slate-800,
+.dark .dark\:bg-slate-850,
+.dark .dark\:bg-slate-800,
+.dark .dark\:bg-slate-800\/90,
+.dark .dark\:bg-slate-800\/80,
+.dark .dark\:bg-slate-800\/70,
+.dark .dark\:bg-slate-800\/50 {
+  background-color: var(--ide-surface-elevated) !important;
+}
+
+.dark .border-slate-800,
+.dark .border-slate-850,
+.dark .border-slate-750,
+.dark .border-slate-700,
+.dark .dark\:border-slate-800,
+.dark .dark\:border-slate-850,
+.dark .dark\:border-slate-750,
+.dark .dark\:border-slate-700 {
+  border-color: var(--ide-border) !important;
+}
+
+.dark .hover\:bg-slate-800:hover,
+.dark .dark\:hover\:bg-slate-800:hover,
+.dark .dark\:hover\:bg-slate-850:hover,
+.dark .dark\:hover\:bg-slate-800\/80:hover,
+.dark .dark\:hover\:bg-slate-800\/90:hover {
+  background-color: var(--ide-surface-elevated) !important;
+}
+
+/* Universal text visibility guarantee across all dark and monochrome themes */
+.dark .text-slate-400,
+.dark .text-slate-500,
+.dark .dark\:text-slate-400,
+.dark .dark\:text-slate-500 {
+  color: var(--ide-text-muted) !important;
+}
+
+.dark .text-slate-300,
+.dark .text-slate-200,
+.dark .text-slate-100,
+.dark .dark\:text-slate-300,
+.dark .dark\:text-slate-200,
+.dark .dark\:text-slate-100,
+.dark .dark\:text-white {
+  color: var(--ide-text) !important;
+}
+
+/* Light themes: Map white / slate utility classes to active theme variables */
+.light .bg-white,
+.light .dark\:bg-slate-900,
+.light .dark\:bg-slate-950 {
+  background-color: var(--ide-surface) !important;
+}
+
+.light .bg-slate-50,
+.light .bg-slate-100,
+.light .dark\:bg-slate-800,
+.light .dark\:bg-slate-850 {
+  background-color: var(--ide-surface-elevated) !important;
+}
+
+.light .border-slate-200,
+.light .border-slate-100,
+.light .dark\:border-slate-800,
+.light .dark\:border-slate-700 {
+  border-color: var(--ide-border) !important;
+}
+
+.light .hover\:bg-slate-100:hover,
+.light .hover\:bg-slate-50:hover,
+.light .dark\:hover\:bg-slate-800:hover {
+  background-color: var(--ide-surface-elevated) !important;
+}
+
+/* Universal text visibility guarantee across all light and paper themes */
+.light .text-slate-400,
+.light .text-slate-500,
+.light .text-slate-600 {
+  color: var(--ide-text-muted) !important;
+}
+
+.light .text-slate-700,
+.light .text-slate-800,
+.light .text-slate-900 {
+  color: var(--ide-text) !important;
+}
+
+/* Theme accent glows & dynamic tab active borders */
+[data-theme='antigravity-cyber'] .antigravity-tab-active::after {
+  background: linear-gradient(90deg, #00f5ff, #00ff88);
+  box-shadow: 0 0 8px rgba(0, 245, 255, 0.8);
+}
+
+[data-theme='antigravity-nebula'] .antigravity-tab-active::after {
+  background: linear-gradient(90deg, #d946ef, #c084fc);
+  box-shadow: 0 0 8px rgba(217, 70, 239, 0.8);
+}
+
+[data-theme='antigravity-solar'] .antigravity-tab-active::after {
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.8);
+}
+
+[data-theme='antigravity-titanium'] .antigravity-tab-active::after {
+  background: linear-gradient(90deg, #38bdf8, #0ea5e9);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.8);
+}
+
+[data-theme='antigravity-frost'] .antigravity-tab-active::after {
+  background: linear-gradient(90deg, #0284c7, #38bdf8);
+  box-shadow: 0 0 8px rgba(2, 132, 199, 0.6);
+}
+
+[data-theme='antigravity-studio'] .antigravity-tab-active::after {
+  background: linear-gradient(90deg, #4f46e5, #4338ca);
+  box-shadow: 0 0 8px rgba(79, 70, 229, 0.6);
+}
+
+[data-theme='dracula'] .antigravity-tab-active::after {
+  background: linear-gradient(90deg, #bd93f9, #ff79c6);
+  box-shadow: 0 0 8px rgba(189, 147, 249, 0.8);
+}
+
+[data-theme='nord'] .antigravity-tab-active::after {
+  background: linear-gradient(90deg, #88c0d0, #81a1c1);
+  box-shadow: 0 0 8px rgba(136, 192, 208, 0.8);
+}
+
+[data-theme='monokai'] .antigravity-tab-active::after {
+  background: linear-gradient(90deg, #e6db74, #f92672);
+  box-shadow: 0 0 8px rgba(230, 219, 116, 0.8);
+}
+
+[data-theme='antigravity-monochrome'] .antigravity-tab-active::after,
+[data-theme='monochrome'] .antigravity-tab-active::after {
+  background: #ffffff;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.9);
+}
+
+/* Modern IDE Panel Floating Card Architecture with Border & Border Radius */
+.ide-panel-card {
+  border-radius: 0.75rem; /* 12px */
+  border: 1px solid var(--ide-border);
+  overflow: hidden;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.12), 0 1px 2px -1px rgba(0, 0, 0, 0.08);
+}
+
+/* Antigravity Glassmorphic & Glow Utilities */
+.antigravity-glass {
+  background: rgba(14, 17, 26, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+html.light .antigravity-glass,
+[data-theme='light'] .antigravity-glass {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+.antigravity-card {
+  background: linear-gradient(180deg, rgba(21, 25, 38, 0.8) 0%, rgba(14, 17, 26, 0.9) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+}
+
+html.light .antigravity-card,
+[data-theme='light'] .antigravity-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.05);
+}
+
+.antigravity-card:hover {
+  border-color: rgba(99, 102, 241, 0.35);
+}
+
+html.light .antigravity-card:hover,
+[data-theme='light'] .antigravity-card:hover {
+  border-color: rgba(99, 102, 241, 0.45);
+}
+
+.antigravity-glow-indigo {
+  box-shadow: 0 0 15px -3px rgba(99, 102, 241, 0.45);
+}
+
+.antigravity-glow-cyan {
+  box-shadow: 0 0 15px -3px rgba(6, 182, 212, 0.45);
+}
+
+.antigravity-tab-active {
+  position: relative;
+  background: var(--ide-surface-elevated);
+}
+
+.antigravity-tab-active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #6366f1, #06b6d4);
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.8);
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(0.98); }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ============================================================
+   UNIVERSAL THEME-AWARE SCROLLBAR SYSTEM
+   Guarantees no browser-default or white scrollbars anywhere
+   ============================================================ */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ide-scrollbar-thumb) var(--ide-scrollbar-track);
+}
+
+*::-webkit-scrollbar {
+  width: var(--ide-scrollbar-size);
+  height: var(--ide-scrollbar-size);
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--ide-scrollbar-track);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--ide-scrollbar-thumb);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: background-color 0.15s ease-in-out;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--ide-scrollbar-thumb-hover);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:active {
+  background-color: var(--ide-scrollbar-thumb-active);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Dense slim scrollbars for code blocks, terminal, and editors */
+textarea,
+pre,
+code,
+.scrollbar-slim {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ide-scrollbar-thumb) var(--ide-scrollbar-track);
+}
+
+textarea::-webkit-scrollbar,
+pre::-webkit-scrollbar,
+code::-webkit-scrollbar,
+.scrollbar-slim::-webkit-scrollbar {
+  width: var(--ide-scrollbar-size-slim);
+  height: var(--ide-scrollbar-size-slim);
+}
+
+textarea::-webkit-scrollbar-thumb,
+pre::-webkit-scrollbar-thumb,
+code::-webkit-scrollbar-thumb,
+.scrollbar-slim::-webkit-scrollbar-thumb {
+  background-color: var(--ide-scrollbar-thumb);
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Hide scrollbars where explicitly required (e.g., breadcrumb trail) */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ============================================================
+   HIGH CONTRAST ACCESSIBILITY MODE (WCAG AAA)
+   ============================================================ */
+html.high-contrast button:focus-visible,
+html.high-contrast [tabindex]:focus-visible,
+html.high-contrast input:focus-visible,
+html.high-contrast textarea:focus-visible {
+  outline: 2px solid var(--ide-accent, #ffff00) !important;
+  outline-offset: 2px !important;
+}
+
+html.high-contrast .border-slate-800,
+html.high-contrast .border-slate-700,
+html.high-contrast .border-slate-850,
+html.high-contrast .border-slate-900 {
+  border-color: var(--ide-border) !important;
+}
+
+/* ============================================================
+   REDUCED MOTION ACCESSIBILITY
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+html.reduce-motion *,
+html.reduce-motion *::before,
+html.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}

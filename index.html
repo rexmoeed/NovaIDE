@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NovaIDE - Autonomous AI Software Engineering Studio</title>
+    <meta name="description" content="Production-grade AI software development IDE with autonomous coding agents, intelligent stack selection, interactive multi-tab code editor, terminal, automated testing, and self-healing debugging." />
+    <meta property="og:title" content="NovaIDE - Autonomous AI Software Engineering Studio" />
+    <meta property="og:description" content="Production-grade AI software development IDE with autonomous coding agents, intelligent stack selection, interactive multi-tab code editor, terminal, automated testing, and self-healing debugging." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script>
+      (function() {
+        if (typeof window !== 'undefined') {
+          window.process = window.process || {
+            env: { NODE_ENV: 'development' },
+            cwd: function() { return '/workspace'; },
+            platform: 'win32',
+          };
+        }
+        try {
+          var originalFetch = typeof window !== 'undefined' && window.fetch ? window.fetch.bind(window) : undefined;
+          var currentFetch = originalFetch;
+
+          // Define getter and setter on window so extensions and interceptors can safely assign window.fetch
+          try {
+            Object.defineProperty(window, 'fetch', {
+              get: function() {
+                return currentFetch;
+              },
+              set: function(fn) {
+                currentFetch = fn;
+              },
+              configurable: true,
+              enumerable: true
+            });
+          } catch (e1) {
+            try {
+              if (window.Window && window.Window.prototype) {
+                Object.defineProperty(window.Window.prototype, 'fetch', {
+                  get: function() {
+                    return currentFetch;
+                  },
+                  set: function(fn) {
+                    currentFetch = fn;
+                  },
+                  configurable: true,
+                  enumerable: true
+                });
+              }
+            } catch (e2) {}
+          }
+        } catch (e) {}
+
+        // Global safety net to prevent third-party Chrome extensions from crashing or reporting errors
+        window.addEventListener('error', function(event) {
+          if (
+            event &&
+            (
+              (event.message && (
+                event.message.indexOf('Cannot set property fetch') !== -1 ||
+                event.message.indexOf('chrome-extension://') !== -1
+              )) ||
+              (event.filename && event.filename.indexOf('chrome-extension://') !== -1)
+            )
+          ) {
+            event.preventDefault && event.preventDefault();
+            event.stopImmediatePropagation && event.stopImmediatePropagation();
+            return true;
+          }
+        }, true);
+
+        window.addEventListener('unhandledrejection', function(event) {
+          if (
+            event &&
+            event.reason &&
+            event.reason.message &&
+            (
+              event.reason.message.indexOf('Cannot set property fetch') !== -1 ||
+              event.reason.message.indexOf('chrome-extension://') !== -1
+            )
+          ) {
+            event.preventDefault && event.preventDefault();
+            event.stopImmediatePropagation && event.stopImmediatePropagation();
+          }
+        }, true);
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
