@@ -263,7 +263,7 @@ function IDEWorkbench() {
       />
 
       {/* 3. MAIN WORKBENCH PANELS LAYOUT */}
-      <div className="flex-1 flex h-[calc(100vh-3.5rem)] max-h-[calc(100vh-3.5rem)] min-h-0 items-stretch overflow-hidden relative bg-[var(--ide-bg)] p-1 gap-1">
+      <div className="flex-1 flex w-full min-h-0 min-w-0 items-stretch overflow-hidden relative bg-[var(--ide-bg)] p-1 gap-1">
         {/* Slim Activity Bar (Explorer, Search, Git, Tests, Agents, Tokens, Settings) */}
         {layout.config.activityBarVisible && <ActivityBar />}
 

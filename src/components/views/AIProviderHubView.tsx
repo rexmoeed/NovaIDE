@@ -72,6 +72,21 @@ export const AIProviderHubView: React.FC<{ onClose?: () => void }> = ({ onClose 
   const [catalogQuery, setCatalogQuery] = useState('');
   const [catalogProviderFilter, setCatalogProviderFilter] = useState<ProviderId | 'all'>('all');
   const [catalogCapabilityFilter, setCatalogCapabilityFilter] = useState<ModelCapability | 'all'>('all');
+  const [isRefreshingCatalog, setIsRefreshingCatalog] = useState(false);
+
+  const handleRefreshCatalog = async () => {
+    setIsRefreshingCatalog(true);
+    try {
+      const targetProvider = catalogProviderFilter === 'all' ? 'openrouter' : catalogProviderFilter;
+      const models = await AIProviderService.fetchDynamicModels(targetProvider);
+      setProviders(AIProviderService.loadProviders());
+      showToast(`Refreshed catalog: ${models.length} models loaded.`);
+    } catch (e: any) {
+      showToast(`Catalog refresh failed: ${e?.message}`);
+    } finally {
+      setIsRefreshingCatalog(false);
+    }
+  };
 
   // Diagnostics State
   const [diagnosticProvider, setDiagnosticProvider] = useState<ProviderId>('gemini');
@@ -675,11 +690,16 @@ export const AIProviderHubView: React.FC<{ onClose?: () => void }> = ({ onClose 
                     className="bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none"
                   >
                     <option value="all">All Providers</option>
-                    <option value="gemini">Gemini</option>
+                    <option value="openrouter">OpenRouter (100+ Models)</option>
+                    <option value="gemini">Google Gemini</option>
+                    <option value="anthropic">Anthropic Claude</option>
                     <option value="openai">OpenAI</option>
-                    <option value="anthropic">Anthropic</option>
-                    <option value="custom">Custom</option>
-                    <option value="local">Local</option>
+                    <option value="deepseek">DeepSeek</option>
+                    <option value="mistral">Mistral</option>
+                    <option value="groq">Groq</option>
+                    <option value="ollama">Ollama (Local)</option>
+                    <option value="lmstudio">LM Studio (Local)</option>
+                    <option value="custom">Custom OpenAI-Compatible</option>
                   </select>
 
                   <select
@@ -694,6 +714,16 @@ export const AIProviderHubView: React.FC<{ onClose?: () => void }> = ({ onClose 
                     <option value="fast">Fast / High Concurrency</option>
                     <option value="vision">Vision Capable</option>
                   </select>
+
+                  <button
+                    onClick={handleRefreshCatalog}
+                    disabled={isRefreshingCatalog}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-xs font-medium text-white transition cursor-pointer shadow-sm"
+                    title="Fetch latest models catalog from provider API"
+                  >
+                    <RotateCw className={`w-3.5 h-3.5 ${isRefreshingCatalog ? 'animate-spin' : ''}`} />
+                    <span>{isRefreshingCatalog ? 'Fetching...' : 'Refresh Catalog'}</span>
+                  </button>
                 </div>
               </div>
 

@@ -378,7 +378,92 @@ export class AIProviderService {
         isReasoning: true,
         isCoding: true,
         status: 'verified',
-        description: 'Unified OpenRouter aggregator gateway to 100+ AI providers.',
+        description: 'Anthropic state-of-the-art hybrid reasoning & coding model via OpenRouter.',
+      },
+      {
+        id: 'anthropic/claude-3.5-sonnet',
+        name: 'Claude 3.5 Sonnet',
+        providerId: 'openrouter',
+        contextWindow: 200000,
+        maxOutputTokens: 8192,
+        inputModalities: ['text', 'image'],
+        outputModalities: ['text', 'code'],
+        supportsToolCalling: true,
+        supportsStreaming: true,
+        supportsStructuredOutput: true,
+        supportsVision: true,
+        isReasoning: true,
+        isCoding: true,
+        status: 'verified',
+        description: 'High-intelligence coding benchmark model.',
+      },
+      {
+        id: 'google/gemini-2.5-pro',
+        name: 'Gemini 2.5 Pro (via OpenRouter)',
+        providerId: 'openrouter',
+        contextWindow: 2000000,
+        maxOutputTokens: 8192,
+        inputModalities: ['text', 'image'],
+        outputModalities: ['text', 'code'],
+        supportsToolCalling: true,
+        supportsStreaming: true,
+        supportsStructuredOutput: true,
+        supportsVision: true,
+        isReasoning: true,
+        isCoding: true,
+        status: 'verified',
+        description: 'Google 2M context window reasoning model.',
+      },
+      {
+        id: 'openai/gpt-4o',
+        name: 'OpenAI GPT-4o',
+        providerId: 'openrouter',
+        contextWindow: 128000,
+        maxOutputTokens: 4096,
+        inputModalities: ['text', 'image'],
+        outputModalities: ['text', 'code'],
+        supportsToolCalling: true,
+        supportsStreaming: true,
+        supportsStructuredOutput: true,
+        supportsVision: true,
+        isReasoning: true,
+        isCoding: true,
+        status: 'verified',
+        description: 'Flagship multimodal coding and reasoning model by OpenAI.',
+      },
+      {
+        id: 'deepseek/deepseek-r1',
+        name: 'DeepSeek R1 (Reasoner)',
+        providerId: 'openrouter',
+        contextWindow: 64000,
+        maxOutputTokens: 8192,
+        inputModalities: ['text'],
+        outputModalities: ['text', 'code'],
+        supportsToolCalling: false,
+        supportsStreaming: true,
+        supportsStructuredOutput: true,
+        supportsVision: false,
+        isReasoning: true,
+        isCoding: true,
+        status: 'verified',
+        description: 'DeepSeek reinforcement-learning open-weights reasoning model.',
+      },
+      {
+        id: 'qwen/qwen-2.5-coder-32b-instruct',
+        name: 'Qwen 2.5 Coder 32B',
+        providerId: 'openrouter',
+        contextWindow: 32768,
+        maxOutputTokens: 8192,
+        inputModalities: ['text'],
+        outputModalities: ['text', 'code'],
+        supportsToolCalling: true,
+        supportsStreaming: true,
+        supportsStructuredOutput: true,
+        supportsVision: false,
+        isReasoning: false,
+        isCoding: true,
+        status: 'verified',
+        description: 'Alibaba leading open-source programming foundation model.',
       },
     ],
     cohere: [
@@ -809,6 +894,27 @@ export class AIProviderService {
     const prefix = trimmed.slice(0, 4);
     const suffix = trimmed.slice(-4);
     return `${prefix}••••••••••••${suffix}`;
+  }
+
+  // Dynamically fetch live models catalog from backend/provider
+  public static async fetchDynamicModels(providerId: ProviderId, apiKey?: string): Promise<ModelInfo[]> {
+    try {
+      const provider = this.getProvider(providerId);
+      const key = apiKey || provider?.apiKey || '';
+      const res = await fetch(`/api/ai/provider/models?providerId=${providerId}&apiKey=${encodeURIComponent(key)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.models) && data.models.length > 0) {
+          if (provider) {
+            this.updateProvider(providerId, { models: data.models });
+          }
+          return data.models;
+        }
+      }
+    } catch (err) {
+      console.warn(`[AIProviderService] Could not fetch dynamic models for ${providerId}:`, err);
+    }
+    return this.DEFAULT_MODELS[providerId] || [];
   }
 
   // Test Connection

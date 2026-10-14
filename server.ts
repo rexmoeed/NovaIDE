@@ -176,6 +176,77 @@ app.post('/api/ai/provider/test', async (req: Request, res: Response) => {
       return res.json({ providerId, success: true, testType, latencyMs, message: `Connected to Anthropic in ${latencyMs}ms.`, timestamp: Date.now() });
     }
 
+    // Dedicated OpenRouter Key Verification (calls /auth/key to check label, credits & limits)
+    if (providerId === 'openrouter') {
+      if (!key) {
+        return res.json({
+          providerId,
+          success: false,
+          testType,
+          latencyMs: 0,
+          message: 'OpenRouter API key required. Please enter your key in Settings -> Models / Providers.',
+          timestamp: Date.now(),
+        });
+      }
+
+      try {
+        const authKeyRes = await fetch('https://openrouter.ai/api/v1/auth/key', {
+          headers: {
+            'Authorization': `Bearer ${key}`,
+            'HTTP-Referer': 'https://novaide.studio',
+            'X-Title': 'Nova IDE',
+          },
+        });
+
+        const latencyMs = Date.now() - startTime;
+        if (authKeyRes.ok) {
+          const keyData = await authKeyRes.json().catch(() => ({}));
+          const d = keyData?.data;
+          const label = d?.label ? ` ("${d.label}")` : '';
+          const usage = d?.usage !== undefined ? ` | Usage: $${d.usage.toFixed(4)}` : '';
+          const limit = d?.limit ? ` | Limit: $${d.limit}` : '';
+          return res.json({
+            providerId,
+            success: true,
+            testType,
+            latencyMs,
+            message: `Connected successfully to OpenRouter${label}${usage}${limit} in ${latencyMs}ms.`,
+            timestamp: Date.now(),
+            keyInfo: d,
+          });
+        } else if (authKeyRes.status === 401) {
+          return res.json({
+            providerId,
+            success: false,
+            testType,
+            latencyMs,
+            message: 'Invalid OpenRouter API key (401 Unauthorized). Please check your key at openrouter.ai/keys.',
+            timestamp: Date.now(),
+          });
+        } else if (authKeyRes.status === 402) {
+          return res.json({
+            providerId,
+            success: false,
+            testType,
+            latencyMs,
+            message: 'Insufficient OpenRouter credits (402 Payment Required). Please top up your account at openrouter.ai/credits.',
+            timestamp: Date.now(),
+          });
+        } else if (authKeyRes.status === 429) {
+          return res.json({
+            providerId,
+            success: false,
+            testType,
+            latencyMs,
+            message: 'OpenRouter rate limit exceeded (429 Too Many Requests). Please retry after a brief delay.',
+            timestamp: Date.now(),
+          });
+        }
+      } catch (authErr: any) {
+        console.warn('OpenRouter auth/key check error:', authErr?.message);
+      }
+    }
+
     // OpenAI-compatible providers: OpenAI, OpenRouter, DeepSeek, Groq, Ollama, LMStudio, Local
     const defaultBaseUrl = providerId === 'openrouter' ? 'https://openrouter.ai/api/v1' :
                            providerId === 'deepseek' ? 'https://api.deepseek.com/v1' :
@@ -232,6 +303,70 @@ app.post('/api/ai/provider/test', async (req: Request, res: Response) => {
       message: error?.message || 'Connection test failed',
       timestamp: Date.now(),
     });
+  }
+});
+
+// Dynamic Model Catalog Endpoint for OpenRouter and local providers
+let cachedOpenRouterModels: any[] | null = null;
+let lastOpenRouterFetchTime = 0;
+
+app.get('/api/ai/provider/models', async (req: Request, res: Response) => {
+  const { providerId = 'openrouter', apiKey: inputKey } = req.query;
+  const key = (inputKey as string) || '';
+
+  try {
+    if (providerId === 'openrouter') {
+      const now = Date.now();
+      if (cachedOpenRouterModels && now - lastOpenRouterFetchTime < 30 * 60 * 1000) {
+        return res.json({ success: true, models: cachedOpenRouterModels, fromCache: true });
+      }
+
+      const headers: Record<string, string> = {
+        'HTTP-Referer': 'https://novaide.studio',
+        'X-Title': 'Nova IDE',
+      };
+      if (key) headers['Authorization'] = `Bearer ${key}`;
+
+      const response = await fetch('https://openrouter.ai/api/v1/models', { headers });
+      if (!response.ok) {
+        throw new Error(`OpenRouter models API returned ${response.status}`);
+      }
+
+      const data: any = await response.json();
+      const rawModels: any[] = data.data || [];
+
+      const formatted = rawModels.map(m => ({
+        id: m.id,
+        name: m.name || m.id,
+        providerId: 'openrouter',
+        contextWindow: m.context_length || 128000,
+        maxOutputTokens: m.top_provider?.max_completion_tokens || 8192,
+        inputModalities: m.architecture?.modality?.includes('image') ? ['text', 'image'] : ['text'],
+        outputModalities: ['text', 'code'],
+        supportsToolCalling: m.supported_parameters?.includes('tools') || false,
+        supportsStreaming: true,
+        supportsStructuredOutput: m.supported_parameters?.includes('response_format') || false,
+        supportsVision: m.architecture?.modality?.includes('image') || false,
+        isReasoning: m.id.includes('r1') || m.id.includes('reasoning') || m.id.includes('thinking'),
+        isCoding: true,
+        pricing: {
+          promptPer1k: m.pricing?.prompt ? parseFloat(m.pricing.prompt) * 1000 : 0,
+          completionPer1k: m.pricing?.completion ? parseFloat(m.pricing.completion) * 1000 : 0,
+        },
+        status: 'verified',
+        description: m.description || `OpenRouter model ${m.id}`,
+      }));
+
+      cachedOpenRouterModels = formatted;
+      lastOpenRouterFetchTime = now;
+
+      return res.json({ success: true, models: formatted, count: formatted.length });
+    }
+
+    return res.json({ success: true, models: [] });
+  } catch (err: any) {
+    console.warn('[Models Catalog Error]:', err?.message);
+    return res.status(500).json({ success: false, error: err?.message || 'Failed to fetch model catalog' });
   }
 });
 

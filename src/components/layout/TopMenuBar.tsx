@@ -129,7 +129,7 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
         borderColor: 'var(--ide-border)',
         color: 'var(--ide-text)',
       }}
-      className="h-8 border-b px-2 flex items-center justify-between select-none z-50 text-xs font-sans relative"
+      className="h-8 border-b px-2 flex items-center justify-between select-none z-50 text-xs font-sans relative shrink-0"
     >
       {/* 1. LEFT: Brand Emblem, Menus & Workspace Switcher */}
       <div className="flex items-center gap-1 min-w-0">

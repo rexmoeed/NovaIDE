@@ -83,7 +83,24 @@
             event.preventDefault && event.preventDefault();
             event.stopImmediatePropagation && event.stopImmediatePropagation();
           }
-        }, true);
+        // Pre-paint theme synchronization to prevent flash of unstyled theme
+        try {
+          var savedPrefs = localStorage.getItem('nova_ide_theme_preferences_v2');
+          var bg = '#06070a';
+          var text = '#f8fafc';
+          if (savedPrefs) {
+            var parsed = JSON.parse(savedPrefs);
+            if (parsed.themeId === 'antigravity') {
+              bg = '#000000';
+              text = '#ffffff';
+            } else if (parsed.themeId === 'light' || parsed.mode === 'light') {
+              bg = '#ffffff';
+              text = '#0f172a';
+            }
+          }
+          document.documentElement.style.backgroundColor = bg;
+          document.documentElement.style.color = text;
+        } catch (e) {}
       })();
     </script>
   </head>
