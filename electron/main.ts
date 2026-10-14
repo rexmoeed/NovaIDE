@@ -7,7 +7,7 @@ import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { spawn } from 'child_process';
-import { IDesktopAPI, WorkspaceFile, CommandExecutionResult } from '../src/types/desktop';
+import type { IDesktopAPI, WorkspaceFile, CommandExecutionResult } from '../src/types/desktop';
 
 let mainWindow: BrowserWindow | null = null;
 let currentWorkspacePath: string = process.cwd();
@@ -41,7 +41,9 @@ function createWindow() {
     backgroundColor: '#020617', // slate-950
     titleBarStyle: 'hiddenInset',
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: fs.existsSync(path.join(__dirname, 'preload.cjs'))
+        ? path.join(__dirname, 'preload.cjs')
+        : path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
@@ -49,11 +51,18 @@ function createWindow() {
     },
   });
 
+  const distHtml = path.join(__dirname, '../dist/index.html');
   const devServerUrl = process.env.VITE_DEV_SERVER_URL || 'http://localhost:3000';
+
   if (app.isPackaged) {
-    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+    mainWindow.loadFile(distHtml);
   } else {
-    mainWindow.loadURL(devServerUrl);
+    // In dev, load dev server or fall back to pre-built dist/index.html if dev server is offline
+    mainWindow.loadURL(devServerUrl).catch(() => {
+      if (fs.existsSync(distHtml)) {
+        mainWindow?.loadFile(distHtml);
+      }
+    });
   }
 
   mainWindow.on('closed', () => {

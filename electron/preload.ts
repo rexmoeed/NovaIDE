@@ -5,7 +5,7 @@
  */
 
 import { contextBridge, ipcRenderer } from 'electron';
-import { IDesktopAPI } from '../src/types/desktop';
+import type { IDesktopAPI } from '../src/types/desktop';
 
 const desktopAPI: IDesktopAPI = {
   isElectron: true,
