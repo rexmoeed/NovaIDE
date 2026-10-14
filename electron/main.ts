@@ -120,6 +120,16 @@ function createWindow() {
     }
   });
 
+  mainWindow.webContents.on('console-message', (_, level, message, line, sourceId) => {
+    if (level >= 2) {
+      console.warn(`[NovaIDE Renderer ${level === 3 ? 'ERROR' : 'WARN'}] ${message} (${sourceId}:${line})`);
+    }
+  });
+
+  mainWindow.webContents.on('render-process-gone', (_, details) => {
+    console.error('[NovaIDE Electron] Render process gone:', details);
+  });
+
   if (app.isPackaged) {
     mainWindow.loadFile(distHtml);
   } else {
@@ -138,8 +148,13 @@ function createWindow() {
 // Security: reject navigation to arbitrary external web pages inside the main window
 app.on('web-contents-created', (_, contents) => {
   contents.on('will-navigate', (event, navigationUrl) => {
-    const parsedUrl = new URL(navigationUrl);
-    if (parsedUrl.origin !== 'http://localhost:3000' && !parsedUrl.protocol.startsWith('file:')) {
+    try {
+      const parsedUrl = new URL(navigationUrl);
+      const isLocal = (parsedUrl.hostname === 'localhost' || parsedUrl.hostname === '127.0.0.1') && (parsedUrl.port === '3000' || !parsedUrl.port);
+      if (!isLocal && !parsedUrl.protocol.startsWith('file:')) {
+        event.preventDefault();
+      }
+    } catch {
       event.preventDefault();
     }
   });
