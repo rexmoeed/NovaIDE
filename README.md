@@ -1,26 +1,28 @@
 <div align="center">
 
 # 🌌 Nova IDE
-### The Complete Cursor-Class AI-First Integrated Development Environment
+### The Complete Cursor-Class AI-First Integrated Development Environment & Autonomous Engineering Studio
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5+-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19.0-61DAFB?logo=react&logoColor=black)](https://react.dev/)
-[![Vite](https://img.shields.io/badge/Vite-5.0+-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
-[![Monaco Editor](https://img.shields.io/badge/Monaco_Editor-VS_Code_Core-007ACC?logo=visualstudiocode&logoColor=white)](https://microsoft.github.io/monaco-editor/)
-[![Tests](https://img.shields.io/badge/Tests-158%2F158%20Passing-brightgreen?logo=vitest&logoColor=white)](https://vitest.dev/)
+[![Vite](https://img.shields.io/badge/Vite-6.0+-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Electron](https://img.shields.io/badge/Electron-34+-47848F?logo=electron&logoColor=white)](https://www.electronjs.org/)
+[![Tests](https://img.shields.io/badge/Tests-164%2F164%20Passing-brightgreen?logo=vitest&logoColor=white)](https://vitest.dev/)
 [![Type Check](https://img.shields.io/badge/tsc-0%20Errors-brightgreen)](https://www.typescriptlang.org/)
+[![Auto Update](https://img.shields.io/badge/Auto--Update-GitHub%20Releases-blue?logo=github&logoColor=white)](https://github.com/rexmoeed/NovaIDE)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-*A state-of-the-art, fully autonomous, zero-fake-mock developer workstation uniting real filesystem manipulation, interactive WebSocket PTY terminals, multi-provider BYOK AI orchestration, enterprise governance gates, and instant local session retention.*
+*A state-of-the-art, fully autonomous, zero-mock developer workstation uniting real filesystem manipulation, interactive WebSocket PTY terminals, multi-provider BYOK AI orchestration, parallel hierarchical agent swarms, background auto-updates, and enterprise governance gates.*
 
 ---
 
 [Key Highlights](#-key-architectural-highlights) • 
+[Multi-Agent Swarm](#-hierarchical-multi-agent-parallel-execution-engine) • 
 [Feature Matrix](#-comprehensive-feature-matrix) • 
+[Windows App & Auto-Update](#-desktop-packaging--windows-installers) • 
 [KOS-Parity Governance](#-section-17e-kos-parity-governance-suite) • 
 [Getting Started](#-getting-started) • 
-[Shortcuts](#-keyboard-shortcuts) • 
-[Architecture](#-system-architecture)
+[Shortcuts](#-keyboard-shortcuts)
 
 </div>
 
@@ -28,40 +30,108 @@
 
 ## 🌟 Key Architectural Highlights
 
-- **Zero-Native Dialog Experience**: Chrome-native popups (`showOpenFilePicker`, `showDirectoryPicker`, `window.alert`, `window.confirm`, `window.prompt`) have been permanently removed. Nova features a custom-themed in-app filesystem navigator with path breadcrumbs, drive navigation, recent project bookmarks, and directory creation.
-- **BYOK Multi-Provider Hub**: Direct first-class support for **Anthropic (Claude 3.5 Sonnet/Opus)**, **Google Gemini (2.5 Pro / 2.0 Flash)**, **OpenAI (GPT-4o / o1 / o3-mini)**, **OpenRouter (460+ live models catalog)**, and **Local LAN Endpoints (Ollama, LM Studio, vLLM)** with real key verification and live pricing calculation.
-- **Real WebSocket PTY Terminals**: Multi-tab terminal driven by real `node-pty` background processes streaming raw xterm.js sessions with full interactive shell support (PowerShell, CMD, Git Bash, WSL).
-- **Single Source of Truth Theming**: 60+ meticulously crafted themes (Nova Dark, VS Code Modern, Dracula, Catppuccin, Monokai, Tokyo Night, Solarized, Gruvbox) synchronized instantly across CSS variables, Monaco Editor definitions, and xterm ANSI palettes with pre-paint zero-flash injection.
-- **Autonomous & Guarded Execution Modes**: Switch effortlessly between **IDE Mode** (read-only advisory), **Agent Mode** (proposes diffs & executes safe allowlisted commands), and **YOLO Mode** (autonomous iterations with strict security denylists and kill-switch control).
-- **Zero-Loss Session Retention & Hot-Exit**: Reopening Nova restores all active tabs, cursor positions, scroll offsets, terminal cwd, active chat context, and unsaved dirty buffers.
+- **Zero-Native Dialog Experience**: Chrome-native popups (`showOpenFilePicker`, `showDirectoryPicker`, `window.alert`, `window.confirm`, `window.prompt`) have been permanently replaced by a custom-themed in-app workspace browser with drive navigation, path breadcrumbs, bookmark history, and folder creation.
+- **Hierarchical Multi-Agent Parallel Swarm**: Decomposes complex software requirements into ordered Directed Acyclic Graph (DAG) task trees executed concurrently across 10 specialized Team Leads with Reader-Writer Lock (`RWLock`) file reservation.
+- **Windows Installable & Auto-Updating**: Pre-packaged as a Windows Setup Installer (`NovaIDE Setup 1.0.0.exe`) and portable single-file executable (`NovaIDE 1.0.0.exe`) with seamless background auto-updating via GitHub Releases and cryptographic SHA-512 verification.
+- **BYOK Multi-Provider Hub**: Direct first-class support for **Anthropic (Claude 3.5 Sonnet / Opus / 3.7)**, **Google Gemini (2.5 Pro / 2.0 Flash)**, **OpenAI (GPT-4o / o1 / o3-mini)**, **OpenRouter (460+ models)**, and **Local LAN Endpoints (Ollama, LM Studio, vLLM)** with live API key testing and real token cost tracking.
+- **Real WebSocket PTY Terminals**: Multi-tab terminal driven by background `node-pty` processes streaming raw xterm.js sessions with full interactive shell support (PowerShell, CMD, Git Bash, WSL).
+- **Single Source of Truth Theming**: 60+ curated themes (Nova Dark, VS Code Modern, Dracula, Catppuccin, Monokai, Tokyo Night, Gruvbox) synchronized instantly across CSS variables, Monaco Editor syntax, and xterm ANSI palettes with pre-paint zero-flash injection.
+- **Zero-Loss Session Retention & Hot-Exit**: Reopening Nova instantly restores open files, cursor coordinates, scroll offsets, terminal working directories, active chat contexts, and dirty buffer recovery.
 - **Enterprise KOS-Parity Governance**: Complete implementation of all 17 advanced governance capabilities: AES-256 Credential Vault, Rulebook Hard Gates, Secret Scanning, Multi-AI Council, and Unified Operator Console.
+
+---
+
+## 🤖 Hierarchical Multi-Agent Parallel Execution Engine
+
+Nova IDE features a production-grade autonomous agent hierarchy capable of decomposing arbitrary project requests into a phased, parallelized execution pipeline:
+
+```mermaid
+graph TD
+    UserReq[User Feature or Project Request] --> Planner[Dynamic Decomposition Engine]
+    Planner --> DAG[10-Task Dependency DAG]
+
+    subgraph Phase1 [Phase 1: Discovery & Blueprint]
+        TL1[Lead Architect]
+        TL2[Design System Lead]
+    end
+
+    subgraph Phase2 [Phase 2: Core Foundations]
+        TL3[Backend API Engineer]
+        TL4[Database & Storage Admin]
+    end
+
+    subgraph Phase3 [Phase 3: Implementation & Parallel Assembly]
+        TL5[Frontend Specialist]
+        TL6[Security Auditor]
+        TL7[DevOps & Tooling Lead]
+    end
+
+    subgraph Phase4 [Phase 4: Verification & Delivery]
+        TL8[QA & Test Engineer]
+        TL9[Docs & DX Specialist]
+        TL10[Release Coordinator]
+    end
+
+    DAG --> Phase1
+    Phase1 --> Phase2
+    Phase2 --> Phase3
+    Phase3 --> Phase4
+
+    RWLock[Reader-Writer Concurrency RWLock] -.-> Phase2
+    RWLock -.-> Phase3
+```
+
+### Concurrency Guarantees:
+- **Phase-Ordered Synchronization**: Dependent tasks (e.g., UI implementation waiting on API schemas) execute strictly according to their DAG prerequisites.
+- **File Reservation Lock (`RWLock`)**: Multiple agents modifying independent files run simultaneously with high throughput. Shared files trigger automatic write-locks, eliminating edit collision and overwrites.
+- **Real-Time Progress & Verification**: Each task undergoes automated validation, test discovery, and self-repair before proceeding to phase completion.
+
+---
+
+## 🖥️ Desktop Packaging & Windows Installers
+
+Nova IDE is available as an Electron desktop suite designed specifically for Windows 10/11:
+
+### 📦 Distribution Formats (`release/`):
+| Package | Output File | Target Use Case |
+|---|---|---|
+| **Windows Setup Installer** | `NovaIDE Setup 1.0.0.exe` (~124 MB) | Full NSIS installer with customizable directory, Start Menu shortcuts, Desktop shortcut, and uninstaller. |
+| **Windows Portable** | `NovaIDE 1.0.0.exe` (~123 MB) | Single-file zero-install executable for USB sticks or quick execution without admin rights. |
+| **Unpacked Directory** | `win-unpacked/NovaIDE.exe` | Pre-extracted directory distribution for developers and test environments. |
+
+### 🔄 Seamless Background Auto-Update
+Nova IDE includes native background update handling powered by `electron-updater` and GitHub Releases:
+1. **Silent Background Check**: When launched, the application checks `https://github.com/rexmoeed/NovaIDE/releases` for updates against `latest.yml`.
+2. **Background Download**: Updates are downloaded silently in chunks with SHA-512 blockmap verification.
+3. **One-Click Restart**: A non-intrusive prompt appears when download completes:
+   > *"NovaIDE version X.Y.Z is ready. Restart now to complete the update?"*
+4. **Manual Trigger**: Available anytime via `window.desktopAPI.checkForUpdates()`.
 
 ---
 
 ## 🚀 Comprehensive Feature Matrix
 
 ### 1. 📝 Monaco Editor Core
-- **Full VS Code Language Experience**: Real TypeScript, JavaScript, Python, JSON, CSS, and HTML language diagnostics and syntax highlighting.
-- **Advanced Editing Tools**: Multi-cursor support, bracket pair colorization, indentation guides, code folding, minimap toggle, and breadcrumbs navigation.
+- **Full VS Code Language Experience**: Real TypeScript, JavaScript, Python, JSON, CSS, and HTML diagnostics and syntax highlighting.
+- **Advanced Editing Tools**: Multi-cursor editing, bracket pair colorization, indentation guides, code folding, minimap toggle, and breadcrumb navigation.
 - **Quick Navigation**:
-  - `Ctrl + P`: Quick Open file search with fuzzy filtering.
+  - `Ctrl + P`: Quick Open file search with fuzzy matching.
   - `Ctrl + Shift + P`: Unified Command Palette.
   - `Ctrl + Shift + O`: Workspace symbol lookup.
   - `Ctrl + F` / `Ctrl + H`: High-speed Find and Replace with RegEx support.
-- **Side-by-Side Diff Viewer**: Split diff comparisons for reviewable AI changes and git unstaged edits with atomic Accept/Reject actions.
+- **Side-by-Side Diff Viewer**: Split diff comparisons for reviewable AI changes and unstaged git edits with atomic Accept/Reject actions.
 
 ### 2. 💬 AI Chat & Conversation Hub
-- **Conversation-First UX**: Minimalist, clutter-free chat interface inspired by Cursor and ChatGPT. No decorative dashboard widgets or simulated outputs.
-- **Full-Fidelity Streaming Engine**: Robust SSE parser handling split UTF-8 chunks, mid-stream keep-alive notices, token counters, and cost metrics without raw JSON artifacts.
+- **Conversation-First UX**: Clutter-free chat interface inspired by Cursor and ChatGPT. No artificial mock outputs or placeholders.
+- **Full-Fidelity Streaming Engine**: Robust SSE parser handling split UTF-8 chunks, mid-stream keep-alive notices, token counters, and cost metrics.
 - **Context-Aware Composer**:
-  - `@` Mentions: Attach active files, specific folders, git diffs, terminal outputs, or workspace symbols directly into context.
+  - `@` Mentions: Attach active files, folders, git diffs, terminal outputs, or symbols directly into prompt context.
   - `/` Slash Commands: Trigger specialized agent workflows (e.g., `/plan`, `/review`, `/test`, `/fix`).
-  - Image and file drag-and-drop attachments.
-- **Contextual Code Block Actions**: One-click **Apply to File**, **Insert at Cursor**, **Review Diff**, or **Copy Code**.
-- **Persistent Chat History**: Local indexed storage with search, conversation renaming, branching, and workspace association.
+  - Image and document drag-and-drop attachments.
+- **Contextual Actions**: One-click **Apply to File**, **Insert at Cursor**, **Review Diff**, or **Copy Code**.
 
 ### 3. ✨ Cursor-Style AI Features
-- **Inline Code Editing (`Ctrl + K`)**: Select any code snippet or place your cursor, provide an instruction, and review inline diff proposals directly within Monaco.
+- **Inline Code Editing (`Ctrl + K`)**: Select any code snippet, type an instruction, and review live inline diff proposals directly within Monaco.
 - **Tab Ghost-Text Autocomplete**: Fast inline AI completions with debounced background model requests and multi-token Tab accept.
 - **Terminal Natural Language AI (`Ctrl + K` in Terminal)**: Convert natural language requests into verified shell commands with mandatory approval before execution.
 - **AI Commit Generator**: Automatically analyze staged git diffs and produce conventional, high-quality git commit messages.
@@ -76,30 +146,12 @@
 - **Managed Dev Servers & Ports Panel**:
   - Start, monitor, and terminate background development processes.
   - Automatic port readiness detection and active port listener status.
-- **Problems & Test Output Panels**:
-  - Real tsc and linter problem tracking with click-to-navigate code coordinates.
-  - Test runner integration with live pass/fail result visualization.
 
 ### 5. 🎨 Universal Theme Engine (60+ Curated Themes)
 Single-source-of-truth registry dynamically synchronizing CSS root tokens, Monaco editor syntax colors, and xterm terminal palettes:
-- **Dark Themes**: Nova Dark (Default), VS Code Dark+, One Dark Pro, Dracula, Dracula Soft, Monokai, Monokai Pro, Monokai Dimmed, Nord, Tokyo Night, Tokyo Night Storm, Catppuccin Mocha, Catppuccin Macchiato, Catppuccin Frappé, Gruvbox Dark (Hard/Medium/Soft), GitHub Dark, GitHub Dark Dimmed, Material Ocean, Material Palenight, Night Owl, Ayu Dark, Ayu Mirage, Rosé Pine, Rosé Pine Moon, Synthwave '84, Cobalt2, Shades of Purple, Poimandres, Cursor Dark, and more.
-- **Light Themes**: Nova Light, VS Code Light+, GitHub Light, Solarized Light, One Light, Catppuccin Latte, Gruvbox Light, Tokyo Night Light, Ayu Light, Rosé Pine Dawn.
-- **High Contrast**: High Contrast Dark, High Contrast Light, and Color-Blind Friendly palettes.
+- **Dark Themes**: Nova Dark (Default), VS Code Dark+, One Dark Pro, Dracula, Monokai, Nord, Tokyo Night, Catppuccin Mocha, Gruvbox Dark, GitHub Dark, Material Ocean, Rosé Pine, Synthwave '84, Poimandres, and more.
+- **Light Themes**: Nova Light, VS Code Light+, GitHub Light, Solarized Light, One Light, Catppuccin Latte, Gruvbox Light, Tokyo Night Light.
 - **Zero-Flash Pre-Paint Execution**: Inline boot script restores chosen theme before first DOM paint to prevent flash-of-white.
-
-### 6. 🕒 Work History, Local Timeline & Checkpoints
-- **Independent File Snapshots**: Automatically snapshots files on every user save and before/after every agent turn, independent of Git.
-- **File Timeline View**: Browse historical snapshots with timestamped diffs and one-click file restoration.
-- **Per-Turn Agent Checkpoints**: Grouped atomic undo for multi-file AI edits with one-click full-workspace rollback.
-- **Hot-Exit Crash Recovery**: Persistently caches unsaved buffer changes, prompting seamless resolution upon reload if external disk modifications occur.
-
-### 7. 📦 Multi-Stack Profiles & Polyglot Engine
-Automatic project stack profiling without scattered hardcoded conditions:
-- **Web & JavaScript**: React, Next.js, Vite, Vue, Nuxt, Svelte, Angular, Express, Fastify, NestJS, Bun, Deno.
-- **Python**: Django, Flask, FastAPI, Poetry, uv, Pipenv, requirements.txt.
-- **Systems & Backend**: Go (`go.mod`), Rust (`Cargo.toml`), Java/Kotlin (`pom.xml`, Gradle), .NET (`.csproj`, `.sln`), PHP (`composer.json`), Docker (`docker-compose.yml`).
-- **Monorepos**: pnpm workspaces, npm workspaces, Turborepo, Nx, and Cargo workspaces.
-- **Automated Tooling Detection**: Automatically selects the proper package manager (`pnpm`, `bun`, `yarn`, `npm`, `cargo`, `pip`) and identifies `dev`, `build`, `test`, and `lint` commands.
 
 ---
 
@@ -131,71 +183,23 @@ Nova IDE integrates an enterprise-grade operational governance suite with a zero
 
 ## ⌨️ Keyboard Shortcuts
 
-| Shortcut | Action | Scope |
+Access all shortcuts inside the IDE anytime by pressing `F1` or opening the interactive **Keyboard Shortcuts Modal** (`Cmd/Ctrl + /`):
+
+| Shortcut | Action | Category |
 |---|---|---|
-| `Ctrl + P` | Quick Open File | Global |
-| `Ctrl + Shift + P` | Command Palette | Global |
-| `Ctrl + Shift + O` | Workspace Symbol Search | Monaco Editor |
-| `Ctrl + L` | Open AI Chat & Attach Selection | Global / Editor |
-| `Ctrl + K` | Inline Code Edit / AI Terminal Prompt | Monaco / Terminal |
-| `Ctrl + \`` | Toggle Integrated Terminal | Global |
-| `Ctrl + B` | Toggle Left Sidebar | Global |
-| `Ctrl + S` | Save Active File & Snapshot to History | Monaco Editor |
-| `Ctrl + Shift + S` | Save All Open Files | Monaco Editor |
-| `Ctrl + Shift + F` | Global Workspace Search & Replace | Global |
-| `Ctrl + Tab` | Switch to Next Open Tab | Editor Tabs |
-| `Escape` | Close Modal / Cancel Generation | Modals / Chat |
-
----
-
-## 🛠️ System Architecture
-
-```mermaid
-graph TD
-    subgraph Client [Browser / Electron Frontend - React 19]
-        UI[App Shell & Layout]
-        Monaco[Monaco Editor Core]
-        XTerm[xterm.js Terminal]
-        Chat[AI Chat & Composer]
-        OpConsole[Unified Operator Console]
-        ThemeSys[Universal Theme Engine]
-    end
-
-    subgraph Backend [Local Express Service - Port 3000]
-        WS[WebSocket Hub]
-        FS[Filesystem Service]
-        PTY[node-pty Shell Manager]
-        GitSvc[Git CLI Service]
-        ProcMgr[Process Manager & Dev Servers]
-        KOS[KOS Parity Engine]
-    end
-
-    subgraph Security [Governance & Security]
-        Vault[AES-256 Vault]
-        Gates[Rulebook Pre-Execution Gates]
-        Scanner[Entropy & Secret Scanner]
-        ApprQueue[Owner Approval Queue]
-    end
-
-    subgraph AI [Multi-Provider AI Registry]
-        Anthropic[Anthropic Claude]
-        Gemini[Google Gemini]
-        OpenAI[OpenAI]
-        OpenRouter[OpenRouter 460+ Models]
-        LAN[Local LAN - Ollama / vLLM]
-    end
-
-    UI --> WS
-    Monaco --> FS
-    XTerm --> PTY
-    Chat --> KOS
-    OpConsole --> KOS
-    KOS --> Gates
-    Gates --> Vault
-    Gates --> Scanner
-    Gates --> ApprQueue
-    KOS --> AI
-```
+| `Cmd/Ctrl + I` | Cursor Composer: Multi-file generation with `@` mentions | AI & Copilot |
+| `Cmd/Ctrl + K` | Cursor Inline Edit: In-editor diff review | AI & Copilot |
+| `Tab` | Cursor Tab: Accept inline ghost-text code prediction | AI & Copilot |
+| `Cmd/Ctrl + K (Terminal)` | Terminal AI: Natural language shell command synthesis | AI & Copilot |
+| `Cmd/Ctrl + P` | Quick-open file across entire workspace | Navigation |
+| `Cmd/Ctrl + Shift + F` | Global codebase grep search and replace | Navigation |
+| `Cmd/Ctrl + S` | Save active file & snapshot to history | Execution |
+| `Cmd/Ctrl + Enter` | Execute autonomous agent task or send prompt | Execution |
+| `Cmd/Ctrl + \`` | Toggle integrated terminal & diagnostics dock | Execution |
+| `Cmd/Ctrl + Shift + T` | Run all Vitest assertions & unit test suites | Testing & DAP |
+| `F5 / Shift + F5` | Start / Continue / Stop DAP Debugging session | Testing & DAP |
+| `F10 / F11` | Step Over / Step Into current statement | Testing & DAP |
+| `Escape` | Dismiss active modal, search, or dialog | Global |
 
 ---
 
@@ -203,64 +207,56 @@ graph TD
 
 ### Prerequisites
 - **Node.js**: v18.0.0 or higher
-- **Git**: Installed and available in your system path
-- **Package Manager**: `npm`, `pnpm`, or `bun`
+- **Git**: Installed and available in system PATH
+- **Operating System**: Windows 10/11, macOS, or Linux
 
-### Installation & Launch
-
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/rexmoeed/NovaIDE.git
-   cd NovaIDE
-   ```
-
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
-
-3. **Start Nova IDE**:
-   ```bash
-   npm run dev
-   ```
-
-4. **Access the IDE**:
-   Open your browser and navigate to:
-   ```text
-   http://localhost:3000
-   ```
-
-### Running Tests & Verification
-
-Verify the entire codebase with the complete automated test suite:
+### Quick Start (Web Development Mode)
 
 ```bash
-# Run unit & integration test suites (158 passing tests)
-npm test
+# 1. Clone repository
+git clone https://github.com/rexmoeed/NovaIDE.git
+cd NovaIDE
 
-# Run TypeScript compilation check (0 errors)
-npx tsc --noEmit
+# 2. Install dependencies
+npm install
 
-# Build production bundle
-npm run build
+# 3. Launch local development server
+npm run dev
 ```
+
+Visit `http://localhost:3000` in your browser.
 
 ---
 
-## 🖥️ Desktop Packaging (Electron)
+### Desktop App (Electron)
 
-Nova IDE is architected for dual-target distribution as a local web application and as a standalone Windows desktop executable (`.exe`).
-
-### Building the Desktop Executable
 ```bash
-# Package portable executable and NSIS installer
+# Run desktop app locally in development mode
+npm run electron
+
+# Package Windows NSIS setup installer & portable executable (.exe)
 npm run electron:build
 ```
 
-The Electron build leverages:
-- `electron/main.ts`: Starts the local backend on `127.0.0.1` with a random port and secure session token.
-- `electron/preload.ts`: Narrow, context-isolated bridge exposing IPC communication.
-- `electron-builder`: Generates optimized standalone Windows `.exe` installers with system tray integration.
+Installable outputs will be created in `release/`:
+- `release/NovaIDE Setup 1.0.0.exe` (Installer)
+- `release/NovaIDE 1.0.0.exe` (Portable)
+- `release/latest.yml` (Auto-update manifest)
+
+---
+
+### Verification & Quality Assurance
+
+```bash
+# Run complete test suite (164 tests across 12 suites)
+npm test
+
+# Verify TypeScript type integrity (0 errors)
+npx tsc --noEmit
+
+# Compile production web bundle
+npm run build
+```
 
 ---
 
@@ -271,5 +267,5 @@ Nova IDE is licensed under the [MIT License](LICENSE).
 ---
 
 <div align="center">
-Built with ❤️ for developers who demand real tools, zero simulated answers, and uncompromising AI control.
+Built with ❤️ for developers who demand real tools, zero simulated answers, and uncompromising AI engineering control.
 </div>
