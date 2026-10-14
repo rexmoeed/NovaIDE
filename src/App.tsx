@@ -30,6 +30,7 @@ import { AIProviderHubView } from './components/views/AIProviderHubView';
 import { CodeEvolutionView } from './components/views/CodeEvolutionView';
 import { BugDetectiveView } from './components/views/BugDetectiveView';
 import { ProductionWatchdogView } from './components/views/ProductionWatchdogView';
+import { OperatorConsoleView } from './components/views/OperatorConsoleView';
 import { VoiceCodingModal } from './components/modals/VoiceCodingModal';
 import { CloneRepoModal } from './components/modals/CloneRepoModal';
 import { CloseProjectModal } from './components/modals/CloseProjectModal';
@@ -319,6 +320,7 @@ function IDEWorkbench() {
           {activeView === 'bug-detective' && <BugDetectiveView />}
 
           {activeView === 'watchdog' && <ProductionWatchdogView />}
+          {activeView === 'operator' && <OperatorConsoleView onClose={() => setActiveView('editor')} />}
 
           {(!activeView || activeView === 'editor') && (
             <div className="flex-1 flex flex-col min-h-0 overflow-hidden">

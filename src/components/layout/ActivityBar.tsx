@@ -271,6 +271,22 @@ export const ActivityBar: React.FC = () => {
           <Activity className="w-5 h-5 text-amber-400" />
         </button>
 
+        {/* Operator Console (KOS Parity) */}
+        <button
+          onClick={() => setActiveView('operator')}
+          className={`relative w-10 h-10 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
+            activeView === 'operator'
+              ? 'text-[var(--ide-accent,#00ff88)] bg-slate-800/60'
+              : 'text-slate-400 hover:text-white hover:bg-slate-900'
+          }`}
+          title="Operator Console (Approvals, Vault, Rulebook, Council & Trackers)"
+        >
+          {activeView === 'operator' && (
+            <div className="absolute left-0 top-2 bottom-2 w-[2px] bg-[var(--ide-accent,#00ff88)] rounded-r shadow-[0_0_8px_var(--ide-accent)]" />
+          )}
+          <ShieldCheck className="w-5 h-5 text-emerald-400" />
+        </button>
+
         {/* Design System Studio */}
         <button
           onClick={() => setActiveView('design-system')}

@@ -47,7 +47,7 @@ import { useTheme } from './ThemeContext';
 import { SecurityAuditService } from '../services/securityAuditService';
 
 export type CursorMode = 'ask' | 'edit' | 'agent' | 'review';
-export type IDEActiveView = 'editor' | 'welcome' | 'agents' | 'design-system' | 'settings' | 'providers' | 'evolution' | 'bug-detective' | 'watchdog';
+export type IDEActiveView = 'editor' | 'welcome' | 'agents' | 'design-system' | 'settings' | 'providers' | 'evolution' | 'bug-detective' | 'watchdog' | 'operator';
 
 interface IDEContextType {
   // Cursor-Style Modes
