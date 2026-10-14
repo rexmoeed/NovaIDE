@@ -110,6 +110,8 @@ export interface SecurityPolicy {
 export interface IDesktopAPI {
   // Workspace and Files
   openDirectoryDialog: () => Promise<string | null>;
+  openFileDialog?: () => Promise<string | null>;
+  setWorkspacePath?: (newPath: string) => Promise<{ success: boolean; path?: string }> | void;
   getWorkspaceTree: (workspacePath: string) => Promise<WorkspaceFile[]>;
   readFile: (filePath: string) => Promise<string>;
   writeFile: (filePath: string, content: string) => Promise<{ success: boolean; error?: string }>;

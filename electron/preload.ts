@@ -12,6 +12,8 @@ const desktopAPI: IDesktopAPI = {
   platform: process.platform as 'darwin' | 'win32' | 'linux',
 
   openDirectoryDialog: () => ipcRenderer.invoke('workspace:openDirectoryDialog'),
+  openFileDialog: () => ipcRenderer.invoke('workspace:openFileDialog'),
+  setWorkspacePath: (newPath: string) => ipcRenderer.invoke('workspace:setWorkspacePath', newPath),
   getWorkspaceTree: (workspacePath: string) => ipcRenderer.invoke('workspace:getTree', workspacePath),
   readFile: (filePath: string) => ipcRenderer.invoke('workspace:readFile', filePath),
   writeFile: (filePath: string, content: string) => ipcRenderer.invoke('workspace:writeFile', filePath, content),

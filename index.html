@@ -20,7 +20,18 @@
         }
         try {
           var originalFetch = typeof window !== 'undefined' && window.fetch ? window.fetch.bind(window) : undefined;
-          var currentFetch = originalFetch;
+          var currentFetch = function(input, init) {
+            if (typeof input === 'string' && input.startsWith('/')) {
+              if (window.location.protocol === 'file:' || !window.location.origin.startsWith('http')) {
+                input = 'http://127.0.0.1:3000' + input;
+              }
+            } else if (input && typeof input.url === 'string' && input.url.startsWith('/')) {
+              if (window.location.protocol === 'file:' || !window.location.origin.startsWith('http')) {
+                input = new Request('http://127.0.0.1:3000' + input.url, input);
+              }
+            }
+            return originalFetch ? originalFetch(input, init) : Promise.reject(new Error('Fetch unavailable'));
+          };
 
           // Define getter and setter on window so extensions and interceptors can safely assign window.fetch
           try {

@@ -20,8 +20,12 @@ class DesktopBridgeService implements IDesktopAPI {
     this.localVfs = vfs;
   }
 
-  public setWorkspacePath(path: string) {
+  public async setWorkspacePath(path: string): Promise<{ success: boolean; path?: string }> {
     this.currentWorkspacePath = path;
+    if (this.isElectron && (window as any).desktopAPI?.setWorkspacePath) {
+      return (window as any).desktopAPI.setWorkspacePath(path);
+    }
+    return { success: true, path };
   }
 
   private folderPickerHandler: (() => Promise<string | null>) | null = null;

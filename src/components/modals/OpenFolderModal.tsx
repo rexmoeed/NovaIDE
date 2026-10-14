@@ -66,12 +66,19 @@ export const OpenFolderModal: React.FC<OpenFolderModalProps> = ({
     } catch {}
   }, [isOpen]);
 
+  const getApiUrl = (endpoint: string) => {
+    if (typeof window !== 'undefined' && (window.location.protocol === 'file:' || !window.location.origin.startsWith('http'))) {
+      return `http://127.0.0.1:3000${endpoint}`;
+    }
+    return endpoint;
+  };
+
   // Fetch directory listing from backend
   const fetchDirectory = async (targetPath: string) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/fs/browse-dirs', {
+      const res = await fetch(getApiUrl('/api/fs/browse-dirs'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ currentPath: targetPath }),
@@ -127,7 +134,7 @@ export const OpenFolderModal: React.FC<OpenFolderModalProps> = ({
 
     try {
       const target = `${currentPath}/${newFolderName.trim()}`;
-      const res = await fetch('/api/fs/create-dir', {
+      const res = await fetch(getApiUrl('/api/fs/create-dir'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ dirPath: target }),
@@ -188,12 +195,32 @@ export const OpenFolderModal: React.FC<OpenFolderModalProps> = ({
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            {typeof window !== 'undefined' && !!(window as any).desktopAPI?.openDirectoryDialog && (
+              <button
+                type="button"
+                onClick={async () => {
+                  const nativeFolder = await (window as any).desktopAPI.openDirectoryDialog();
+                  if (nativeFolder) {
+                    onSelectFolder(nativeFolder);
+                    onClose();
+                  }
+                }}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 border border-indigo-500/40 text-indigo-200 hover:text-white text-[11px] font-semibold transition cursor-pointer"
+                title="Browse using Windows native File Explorer dialog"
+              >
+                <Folder className="w-3.5 h-3.5" />
+                <span>Windows Explorer Picker</span>
+              </button>
+            )}
+
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Shortcuts Bar (Drives & System Folders) */}

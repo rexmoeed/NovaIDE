@@ -177,18 +177,42 @@ function registerIpcHandlers() {
       title: 'Select Workspace Repository',
     });
     if (!result.canceled && result.filePaths.length > 0) {
-      currentWorkspacePath = result.filePaths[0];
+      currentWorkspacePath = path.resolve(result.filePaths[0]);
       return currentWorkspacePath;
     }
     return null;
   });
 
+  // 1b. Open File Dialog
+  ipcMain.handle('workspace:openFileDialog', async (): Promise<string | null> => {
+    if (!mainWindow) return null;
+    const result = await dialog.showOpenDialog(mainWindow, {
+      properties: ['openFile'],
+      title: 'Select File to Open',
+    });
+    if (!result.canceled && result.filePaths.length > 0) {
+      return result.filePaths[0];
+    }
+    return null;
+  });
+
+  // 1c. Set Workspace Path
+  ipcMain.handle('workspace:setWorkspacePath', async (_, newPath: string) => {
+    if (newPath && fs.existsSync(newPath)) {
+      currentWorkspacePath = path.resolve(newPath);
+      console.log(`[NovaIDE Electron] Active workspace path set to: ${currentWorkspacePath}`);
+      return { success: true, path: currentWorkspacePath };
+    }
+    return { success: false, error: 'Path does not exist' };
+  });
+
   // 2. Read Workspace Tree
   ipcMain.handle('workspace:getTree', async (_, workspacePath: string): Promise<WorkspaceFile[]> => {
-    const rootPath = workspacePath || currentWorkspacePath;
-    if (!isPathWithinWorkspace(rootPath, rootPath)) {
-      throw new Error('Access denied: Unauthorized workspace path');
+    const rootPath = workspacePath ? path.resolve(workspacePath) : currentWorkspacePath;
+    if (!fs.existsSync(rootPath)) {
+      return [];
     }
+    currentWorkspacePath = rootPath;
 
     function scanDir(dir: string, baseDir: string): WorkspaceFile[] {
       const entries = fs.readdirSync(dir, { withFileTypes: true });
