@@ -887,16 +887,61 @@ export const IDEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           : (newVfs.readFile('package.json') !== null ? 'package.json'
           : (findFirstFile(convertedNodes) || 'README.md')))));
 
-      const initialTab: OpenTab = { id: `tab-${Date.now()}`, filePath: entryFile, title: entryFile.split('/').pop() || entryFile };
-      setOpenTabs([initialTab]);
-      setActiveTabId(initialTab.id);
-      setActiveFile(entryFile);
-      const initialContent = newVfs.readFile(entryFile);
+      localStorage.setItem('novaide_last_workspace', folderPath);
+
+      // Check for persisted tabs and hot-exit buffers
+      let restoredTabs: OpenTab[] = [];
+      let restoredActiveFile = entryFile;
+      try {
+        const savedTabsRaw = localStorage.getItem(`novaide_tabs_${detected.id}`);
+        if (savedTabsRaw) {
+          const parsed = JSON.parse(savedTabsRaw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            restoredTabs = parsed;
+          }
+        }
+      } catch (e) {}
+
+      // Hot exit restoration for dirty buffers
+      try {
+        const hotExitRaw = localStorage.getItem(`novaide_hot_exit_${detected.id}`);
+        if (hotExitRaw) {
+          const dirtyList = JSON.parse(hotExitRaw);
+          if (Array.isArray(dirtyList)) {
+            for (const item of dirtyList) {
+              if (item.filePath && typeof item.content === 'string') {
+                newVfs.writeFile(item.filePath, item.content);
+                const matchTab = restoredTabs.find(t => t.filePath === item.filePath);
+                if (matchTab) {
+                  matchTab.isDirty = true;
+                }
+              }
+            }
+            logAgentAction('Architect', 'Restored unsaved changes from previous session (Hot Exit).', 'info');
+          }
+        }
+      } catch (e) {}
+
+      if (restoredTabs.length > 0) {
+        const savedActiveId = localStorage.getItem(`novaide_active_tab_${detected.id}`);
+        const activeTab = restoredTabs.find(t => t.id === savedActiveId) || restoredTabs[0];
+        setOpenTabs(restoredTabs);
+        setActiveTabId(activeTab.id);
+        setActiveFile(activeTab.filePath);
+        restoredActiveFile = activeTab.filePath;
+      } else {
+        const initialTab: OpenTab = { id: `tab-${Date.now()}`, filePath: entryFile, title: entryFile.split('/').pop() || entryFile };
+        setOpenTabs([initialTab]);
+        setActiveTabId(initialTab.id);
+        setActiveFile(entryFile);
+      }
+
+      const initialContent = newVfs.readFile(restoredActiveFile);
       if (initialContent !== null && initialContent !== undefined) {
         setActiveFileContent(initialContent);
       } else {
-        DesktopBridge.readFile(entryFile).then(c => {
-          newVfs.writeFile(entryFile, c);
+        DesktopBridge.readFile(restoredActiveFile).then(c => {
+          newVfs.writeFile(restoredActiveFile, c);
           setActiveFileContent(c);
         }).catch(() => {
           setActiveFileContent('');
@@ -945,23 +990,72 @@ export const IDEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [openFile]);
 
-  // Auto-connect to real local workspace on initial launch and present Project & File Launch Center
+  // Auto-connect to real local workspace on initial launch and restore previous session
   useEffect(() => {
     let isMounted = true;
     const initHostWorkspace = async () => {
       try {
-        await openLocalFolder('.');
+        const lastWorkspace = localStorage.getItem('novaide_last_workspace') || '.';
+        await openLocalFolder(lastWorkspace);
       } catch (err) {
         // ignore
       } finally {
         if (isMounted) {
-          setActiveView('welcome');
+          try {
+            const lastPath = localStorage.getItem('novaide_last_workspace');
+            const savedTabs = lastPath ? localStorage.getItem(`novaide_tabs_${activeProject.id}`) : null;
+            if (savedTabs && JSON.parse(savedTabs).length > 0) {
+              setActiveView('editor');
+            } else {
+              setActiveView('welcome');
+            }
+          } catch {
+            setActiveView('editor');
+          }
         }
       }
     };
     initHostWorkspace();
     return () => { isMounted = false; };
   }, [openLocalFolder]);
+
+  // Persist session tabs per workspace
+  useEffect(() => {
+    if (activeProject?.id && openTabs.length > 0) {
+      try {
+        localStorage.setItem(`novaide_tabs_${activeProject.id}`, JSON.stringify(openTabs));
+      } catch (e) {}
+    }
+  }, [openTabs, activeProject?.id]);
+
+  // Persist active tab ID
+  useEffect(() => {
+    if (activeProject?.id && activeTabId) {
+      try {
+        localStorage.setItem(`novaide_active_tab_${activeProject.id}`, activeTabId);
+      } catch (e) {}
+    }
+  }, [activeTabId, activeProject?.id]);
+
+  // Persist hot exit dirty buffers
+  useEffect(() => {
+    if (activeProject?.id) {
+      const dirtyTabs = openTabs.filter(t => t.isDirty);
+      if (dirtyTabs.length > 0) {
+        const dirtyData = dirtyTabs.map(t => ({
+          filePath: t.filePath,
+          content: vfs.readFile(t.filePath) || '',
+        }));
+        try {
+          localStorage.setItem(`novaide_hot_exit_${activeProject.id}`, JSON.stringify(dirtyData));
+        } catch (e) {}
+      } else {
+        try {
+          localStorage.removeItem(`novaide_hot_exit_${activeProject.id}`);
+        } catch (e) {}
+      }
+    }
+  }, [openTabs, activeProject?.id, activeFileContent, vfs]);
 
   const closeProject = useCallback(() => {
     const dirty = openTabs.filter(t => t.isDirty);
