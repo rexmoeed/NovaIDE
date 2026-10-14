@@ -720,6 +720,15 @@ export function useCommandInitializer({
 
       // 12. HELP MENU
       {
+        id: 'help.tour',
+        title: 'Feature Tour & Architecture Overview',
+        category: 'Help',
+        description: 'First-time user walkthrough of panels, workflows, and shortcuts',
+        execute: () => {
+          window.dispatchEvent(new CustomEvent('nova:open-walkthrough'));
+        },
+      },
+      {
         id: 'help.shortcuts',
         title: 'Keyboard Shortcuts Cheat Sheet',
         category: 'Help',
@@ -728,12 +737,32 @@ export function useCommandInitializer({
         execute: () => onOpenShortcuts(),
       },
       {
+        id: 'help.updates',
+        title: 'Check for Updates...',
+        category: 'Help',
+        description: 'Check GitHub Releases for new Nova IDE updates',
+        execute: async () => {
+          if (window.desktopAPI?.checkForUpdates) {
+            const res = await window.desktopAPI.checkForUpdates();
+            if (res.status === 'dev-mode') {
+              alert('Running in dev mode. Auto-updates apply to production packaged builds.');
+            } else if (res.status === 'success') {
+              alert('Update check complete. Running latest version or downloading update.');
+            } else {
+              alert('Update status: ' + (res.message || 'NovaIDE is up to date.'));
+            }
+          } else {
+            alert('Desktop updater active in Electron desktop application.');
+          }
+        },
+      },
+      {
         id: 'help.about',
         title: 'About NovaIDE Desktop',
         category: 'Help',
         description: 'Version and environment architecture details',
         execute: () => {
-          alert('NovaIDE v2.4\nDesktop AI-Native Software Engineering Studio\nElectron + React 19 + TypeScript + Vite + Scoped IPC Sandbox');
+          alert('NovaIDE v1.0.0\nAutonomous AI Software Engineering Studio\nElectron + React 19 + TypeScript + Monaco Editor + Multi-Agent Parallel Swarms');
         },
       },
     ];

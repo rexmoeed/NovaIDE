@@ -37,6 +37,7 @@ import { CloseProjectModal } from './components/modals/CloseProjectModal';
 import { OpenFolderModal } from './components/modals/OpenFolderModal';
 import { CursorComposerModal } from './components/cursor/CursorComposerModal';
 import { CursorRulesModal } from './components/cursor/CursorRulesModal';
+import { WalkthroughTourModal } from './components/modals/WalkthroughTourModal';
 import { useCommandInitializer } from './hooks/useCommandInitializer';
 
 import { ThemeProvider, useTheme } from './context/ThemeContext';
@@ -87,6 +88,25 @@ function IDEWorkbench() {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [isCursorRulesOpen, setIsCursorRulesOpen] = useState(false);
+  const [isWalkthroughOpen, setIsWalkthroughOpen] = useState(false);
+
+  // Auto-launch walkthrough tour for first-time users
+  useEffect(() => {
+    const hasSeenTour = localStorage.getItem('nova_ide_walkthrough_seen_v1');
+    if (!hasSeenTour) {
+      const timer = setTimeout(() => {
+        setIsWalkthroughOpen(true);
+      }, 700);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  // Global event listener to open walkthrough tour on demand
+  useEffect(() => {
+    const handleOpenTour = () => setIsWalkthroughOpen(true);
+    window.addEventListener('nova:open-walkthrough', handleOpenTour);
+    return () => window.removeEventListener('nova:open-walkthrough', handleOpenTour);
+  }, []);
 
   // Initialize Global Command Registry
   useCommandInitializer({
@@ -304,6 +324,7 @@ function IDEWorkbench() {
             <WelcomeView
               onOpenNewProject={() => setIsProjectWizardOpen(true)}
               onOpenShortcuts={() => setIsShortcutsOpen(true)}
+              onOpenTour={() => setIsWalkthroughOpen(true)}
             />
           )}
 
@@ -478,6 +499,20 @@ function IDEWorkbench() {
       <CursorRulesModal
         isOpen={isCursorRulesOpen}
         onClose={() => setIsCursorRulesOpen(false)}
+      />
+
+      {/* First-Time User Walkthrough & Feature Tour Modal */}
+      <WalkthroughTourModal
+        isOpen={isWalkthroughOpen}
+        onClose={() => {
+          setIsWalkthroughOpen(false);
+          localStorage.setItem('nova_ide_walkthrough_seen_v1', 'true');
+        }}
+        onOpenProjectWizard={() => {
+          setIsWalkthroughOpen(false);
+          localStorage.setItem('nova_ide_walkthrough_seen_v1', 'true');
+          setIsProjectWizardOpen(true);
+        }}
       />
     </div>
   );

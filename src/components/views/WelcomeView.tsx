@@ -14,6 +14,7 @@ import {
   Laptop,
   Server,
   Zap,
+  Compass,
 } from 'lucide-react';
 import { RecentProjects } from '../../services/recentProjects';
 import { RecentProject } from '../../types/project';
@@ -21,9 +22,10 @@ import { RecentProject } from '../../types/project';
 interface WelcomeViewProps {
   onOpenNewProject: () => void;
   onOpenShortcuts: () => void;
+  onOpenTour?: () => void;
 }
 
-export const WelcomeView: React.FC<WelcomeViewProps> = ({ onOpenNewProject, onOpenShortcuts }) => {
+export const WelcomeView: React.FC<WelcomeViewProps> = ({ onOpenNewProject, onOpenShortcuts, onOpenTour }) => {
   const {
     openLocalFolder,
     openLocalFile,
@@ -87,14 +89,25 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({ onOpenNewProject, onOp
             <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 flex items-center justify-center text-white font-extrabold text-lg shadow-lg shadow-indigo-500/25">
               N
             </div>
-            <div>
-              <h1 className="text-2xl font-black tracking-tight text-white flex items-center gap-2">
-                Nova<span className="text-indigo-400">IDE</span>
-                <span className="text-xs font-mono font-medium px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
-                  Production Studio
-                </span>
-              </h1>
-              <p className="text-xs text-slate-400">
+            <div className="flex-1">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h1 className="text-2xl font-black tracking-tight text-white flex items-center gap-2">
+                  Nova<span className="text-indigo-400">IDE</span>
+                  <span className="text-xs font-mono font-medium px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+                    Production Studio
+                  </span>
+                </h1>
+                {onOpenTour && (
+                  <button
+                    onClick={onOpenTour}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-cyan-500 hover:from-indigo-500 hover:to-cyan-400 text-white text-xs font-bold shadow-md shadow-indigo-500/25 transition-all cursor-pointer hover:scale-102"
+                  >
+                    <Compass className="w-3.5 h-3.5 text-cyan-200 animate-spin-slow" />
+                    <span>Feature Tour & Overview</span>
+                  </button>
+                )}
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">
                 Autonomous AI software engineering IDE with real host filesystem, genuine terminal execution, and multi-provider intelligence.
               </p>
             </div>
