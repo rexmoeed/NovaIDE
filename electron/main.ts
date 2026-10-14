@@ -6,11 +6,70 @@
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'path';
 import fs from 'fs';
+import http from 'http';
 import { spawn } from 'child_process';
 import type { IDesktopAPI, WorkspaceFile, CommandExecutionResult } from '../src/types/desktop';
 
 let mainWindow: BrowserWindow | null = null;
 let currentWorkspacePath: string = process.cwd();
+let backendProcess: any = null;
+
+function checkServerRunning(port = 3000): Promise<boolean> {
+  return new Promise((resolve) => {
+    const req = http.get(`http://127.0.0.1:${port}/api/health`, (res) => {
+      resolve(res.statusCode === 200);
+    });
+    req.on('error', () => resolve(false));
+    req.setTimeout(1000, () => {
+      req.destroy();
+      resolve(false);
+    });
+  });
+}
+
+async function ensureBackendServer(rootDir: string, port = 3000): Promise<void> {
+  const isRunning = await checkServerRunning(port);
+  if (isRunning) {
+    console.log(`[NovaIDE Electron] Backend server already responsive on port ${port}.`);
+    return;
+  }
+
+  console.log(`[NovaIDE Electron] Spawning local backend server on port ${port}...`);
+  const isWin = process.platform === 'win32';
+  const cmd = isWin ? 'npx.cmd' : 'npx';
+  backendProcess = spawn(cmd, ['tsx', 'server.ts'], {
+    cwd: rootDir,
+    stdio: 'ignore',
+    env: { ...process.env, PORT: String(port) },
+  });
+
+  backendProcess.on('error', (err: any) => {
+    console.warn('[NovaIDE Electron] Backend spawn warning:', err?.message || err);
+  });
+
+  // Wait up to 10 seconds for server to report ready
+  for (let i = 0; i < 20; i++) {
+    await new Promise((r) => setTimeout(r, 500));
+    const ready = await checkServerRunning(port);
+    if (ready) {
+      console.log(`[NovaIDE Electron] Backend server is ready on port ${port}.`);
+      return;
+    }
+  }
+}
+
+function cleanupBackend() {
+  if (backendProcess) {
+    try {
+      if (process.platform === 'win32' && backendProcess.pid) {
+        spawn('taskkill', ['/pid', String(backendProcess.pid), '/f', '/t']);
+      } else if (backendProcess.kill) {
+        backendProcess.kill('SIGTERM');
+      }
+    } catch {}
+    backendProcess = null;
+  }
+}
 
 // Restricted files that cannot be directly read or overwritten by AI without special authorization
 const SENSITIVE_PATTERNS = [
@@ -54,10 +113,16 @@ function createWindow() {
   const distHtml = path.join(__dirname, '../dist/index.html');
   const devServerUrl = process.env.VITE_DEV_SERVER_URL || 'http://localhost:3000';
 
+  mainWindow.webContents.on('did-fail-load', (_, errorCode, errorDescription, validatedURL) => {
+    console.warn(`[NovaIDE Electron] Failed to load ${validatedURL} (${errorCode}: ${errorDescription}), falling back to dist/index.html`);
+    if (fs.existsSync(distHtml) && !validatedURL.startsWith('file:')) {
+      mainWindow?.loadFile(distHtml);
+    }
+  });
+
   if (app.isPackaged) {
     mainWindow.loadFile(distHtml);
   } else {
-    // In dev, load dev server or fall back to pre-built dist/index.html if dev server is offline
     mainWindow.loadURL(devServerUrl).catch(() => {
       if (fs.existsSync(distHtml)) {
         mainWindow?.loadFile(distHtml);
@@ -80,8 +145,12 @@ app.on('web-contents-created', (_, contents) => {
   });
 });
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   registerIpcHandlers();
+  const rootDir = path.resolve(__dirname, '..');
+  await ensureBackendServer(rootDir, 3000).catch((e) => {
+    console.warn('[NovaIDE Electron] Ensure backend server caught:', e);
+  });
   createWindow();
 
   app.on('activate', () => {
@@ -89,7 +158,11 @@ app.whenReady().then(() => {
   });
 });
 
+app.on('before-quit', cleanupBackend);
+app.on('will-quit', cleanupBackend);
+
 app.on('window-all-closed', () => {
+  cleanupBackend();
   if (process.platform !== 'darwin') {
     app.quit();
   }
