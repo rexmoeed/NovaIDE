@@ -785,12 +785,17 @@ export const IDEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [devServerProcess, stopDevServer, startDevServer]);
 
-  // Real Workspace Open / Close / Clone System (Zero Native Popups)
+  // Real Workspace Open / Close / Clone System (Zero Native Popups in web, Native OS dialog in Electron)
   const openLocalFolder = useCallback(async (customPath?: string) => {
     let folderPath = customPath;
     if (!folderPath) {
-      setIsOpenFolderModalOpen(true);
-      return false;
+      if (DesktopBridge.isElectron) {
+        folderPath = (await DesktopBridge.openDirectoryDialog()) || undefined;
+        if (!folderPath) return false;
+      } else {
+        setIsOpenFolderModalOpen(true);
+        return false;
+      }
     }
 
     try {
@@ -1022,8 +1027,19 @@ export const IDEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // If no valid user project is loaded, present the Welcome screen and ask the user what to open!
       if (isMounted) {
         setActiveView('welcome');
-        // Do not auto-open Nova IDE repo; prompt the user with in-app folder picker
-        setIsOpenFolderModalOpen(true);
+        if (DesktopBridge.isElectron) {
+          // In Electron, automatically trigger the native Windows folder picker!
+          setTimeout(async () => {
+            if (isMounted) {
+              const chosen = await DesktopBridge.openDirectoryDialog();
+              if (chosen && isMounted) {
+                await openLocalFolder(chosen);
+              }
+            }
+          }, 300);
+        } else {
+          setIsOpenFolderModalOpen(true);
+        }
       }
     };
 

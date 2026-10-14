@@ -12,8 +12,12 @@ import { GitProfile, DevServerProcess, ProjectProfile } from '../types/project';
  */
 class DesktopBridgeService implements IDesktopAPI {
   private localVfs: VirtualFileSystem | null = null;
-  public isElectron: boolean = typeof window !== 'undefined' && !!(window as any).desktopAPI?.isElectron;
-  public platform: 'darwin' | 'win32' | 'linux' = typeof window !== 'undefined' && (window as any).desktopAPI?.platform ? (window as any).desktopAPI.platform : 'darwin';
+  public get isElectron(): boolean {
+    return typeof window !== 'undefined' && (!!(window as any).desktopAPI?.isElectron || !!(window as any).desktopAPI);
+  }
+  public get platform(): 'darwin' | 'win32' | 'linux' {
+    return (typeof window !== 'undefined' && (window as any).desktopAPI?.platform) || (typeof process !== 'undefined' && (process.platform as any)) || 'win32';
+  }
   public currentWorkspacePath: string = (typeof process !== 'undefined' && process.cwd) ? process.cwd() : '/workspace';
 
   public attachVFS(vfs: VirtualFileSystem) {

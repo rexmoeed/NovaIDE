@@ -69,6 +69,7 @@ export const Sidebar: React.FC = () => {
     setIsOpenFolderModalOpen,
     setIsProjectWizardOpen,
     setIsCloneModalOpen,
+    openLocalFolder,
   } = useIDE() as any;
 
   // Search state
@@ -556,7 +557,7 @@ export const Sidebar: React.FC = () => {
               </p>
               <div className="flex flex-col gap-2 w-full max-w-[190px]">
                 <button
-                  onClick={() => setIsOpenFolderModalOpen(true)}
+                  onClick={() => openLocalFolder()}
                   className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/20 transition-all cursor-pointer"
                 >
                   <FolderOpen className="w-4 h-4" />
