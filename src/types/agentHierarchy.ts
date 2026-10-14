@@ -188,3 +188,21 @@ export interface DesignTokens {
     full: string;
   };
 }
+
+export interface ParallelSubAgentActiveInfo {
+  taskId: string;
+  subAgentRole: SubAgentRole;
+  parentLead: TeamLeadRole;
+  title: string;
+  progress: number;
+  stage: string;
+}
+
+export interface ParallelProgressInfo {
+  totalTasks: number;
+  completedTasks: number;
+  failedTasks: number;
+  activeParallelCount: number;
+  percent: number;
+  activeSubAgents: ParallelSubAgentActiveInfo[];
+}
