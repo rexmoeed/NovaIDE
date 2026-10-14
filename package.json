@@ -14,7 +14,7 @@
     "clean": "rm -rf dist dist-electron server.js",
     "lint": "tsc --noEmit",
     "test": "vitest run",
-    "build:electron": "esbuild electron/main.ts electron/preload.ts --bundle --platform=node --format=cjs --outdir=dist-electron --out-extension:.js=.cjs --external:electron",
+    "build:electron": "esbuild electron/main.ts electron/preload.ts --bundle --platform=node --format=cjs --outdir=dist-electron --out-extension:.js=.cjs --external:electron --external:electron-updater",
     "electron": "npm run build:electron && electron .",
     "electron:build": "npm run build && npm run build:electron && electron-builder --win",
     "electron:build:dir": "npm run build && npm run build:electron && electron-builder --win --dir"
@@ -25,6 +25,13 @@
     "directories": {
       "output": "release"
     },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "rexmoeed",
+        "repo": "NovaIDE"
+      }
+    ],
     "files": [
       "dist/**/*",
       "dist-electron/**/*"
@@ -48,6 +55,7 @@
     "@tailwindcss/vite": "^4.3.3",
     "@vitejs/plugin-react": "^6.1.1",
     "dotenv": "^17.2.3",
+    "electron-updater": "^6.8.9",
     "express": "^4.21.2",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",

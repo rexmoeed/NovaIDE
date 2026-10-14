@@ -8,6 +8,7 @@ import path from 'path';
 import fs from 'fs';
 import http from 'http';
 import { spawn } from 'child_process';
+import { autoUpdater } from 'electron-updater';
 import type { IDesktopAPI, WorkspaceFile, CommandExecutionResult } from '../src/types/desktop';
 
 let mainWindow: BrowserWindow | null = null;
@@ -160,6 +161,73 @@ app.on('web-contents-created', (_, contents) => {
   });
 });
 
+function setupAutoUpdater() {
+  if (!app.isPackaged) {
+    console.log('[NovaIDE AutoUpdater] Development environment detected; skipping auto-update checks.');
+    return;
+  }
+
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  autoUpdater.on('checking-for-update', () => {
+    console.log('[NovaIDE AutoUpdater] Checking for available updates...');
+  });
+
+  autoUpdater.on('update-available', (info) => {
+    console.log(`[NovaIDE AutoUpdater] Update available: v${info.version}`);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('nova:update-available', {
+        version: info.version,
+        releaseDate: info.releaseDate,
+      });
+    }
+  });
+
+  autoUpdater.on('update-not-available', () => {
+    console.log('[NovaIDE AutoUpdater] NovaIDE is currently on the latest version.');
+  });
+
+  autoUpdater.on('error', (err) => {
+    console.warn('[NovaIDE AutoUpdater] Update check failed:', err?.message || err);
+  });
+
+  autoUpdater.on('download-progress', (progressObj) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('nova:update-progress', {
+        percent: Math.round(progressObj.percent),
+        bytesPerSecond: progressObj.bytesPerSecond,
+      });
+    }
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    console.log(`[NovaIDE AutoUpdater] Version ${info.version} downloaded successfully.`);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      dialog.showMessageBox(mainWindow, {
+        type: 'info',
+        title: 'NovaIDE Update Ready',
+        message: `NovaIDE version ${info.version} has been downloaded.`,
+        detail: 'Would you like to restart now to install the update?',
+        buttons: ['Restart and Install', 'Install Later'],
+        defaultId: 0,
+        cancelId: 1,
+      }).then((returnValue) => {
+        if (returnValue.response === 0) {
+          autoUpdater.quitAndInstall();
+        }
+      });
+    }
+  });
+
+  // Check for updates 6 seconds after launch
+  setTimeout(() => {
+    autoUpdater.checkForUpdatesAndNotify().catch((err) => {
+      console.warn('[NovaIDE AutoUpdater] Background update check error:', err?.message || err);
+    });
+  }, 6000);
+}
+
 app.whenReady().then(async () => {
   registerIpcHandlers();
   const rootDir = path.resolve(__dirname, '..');
@@ -167,6 +235,7 @@ app.whenReady().then(async () => {
     console.warn('[NovaIDE Electron] Ensure backend server caught:', e);
   });
   createWindow();
+  setupAutoUpdater();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
@@ -384,5 +453,23 @@ function registerIpcHandlers() {
         });
       });
     });
+  });
+
+  // Auto-Update IPC Endpoints
+  ipcMain.handle('desktop:checkForUpdates', async () => {
+    if (!app.isPackaged) {
+      return { status: 'dev-mode', message: 'Auto-updates are only active in production packaged builds.' };
+    }
+    try {
+      const result = await autoUpdater.checkForUpdates();
+      return { status: 'success', updateInfo: result?.updateInfo };
+    } catch (err: any) {
+      return { status: 'error', message: err?.message || String(err) };
+    }
+  });
+
+  ipcMain.handle('desktop:restartAndInstallUpdate', () => {
+    autoUpdater.quitAndInstall();
+    return true;
   });
 }

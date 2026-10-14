@@ -30,6 +30,9 @@ const desktopAPI: IDesktopAPI = {
   gitCommit: (workspacePath: string, message: string) => ipcRenderer.invoke('git:commit', workspacePath, message),
 
   checkPathAllowed: (filePath: string) => ipcRenderer.invoke('workspace:checkAllowed', filePath),
+
+  checkForUpdates: () => ipcRenderer.invoke('desktop:checkForUpdates'),
+  restartAndInstallUpdate: () => ipcRenderer.invoke('desktop:restartAndInstallUpdate'),
 };
 
 contextBridge.exposeInMainWorld('desktopAPI', desktopAPI);

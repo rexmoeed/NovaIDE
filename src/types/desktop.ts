@@ -147,6 +147,10 @@ export interface IDesktopAPI {
   isElectron: boolean;
   platform: 'darwin' | 'win32' | 'linux';
   checkPathAllowed: (filePath: string) => Promise<boolean>;
+
+  // Auto-Update capabilities
+  checkForUpdates?: () => Promise<{ status: string; message?: string; updateInfo?: any }>;
+  restartAndInstallUpdate?: () => Promise<boolean>;
 }
 
 declare global {
