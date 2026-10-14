@@ -270,13 +270,13 @@ export const BottomPanel: React.FC = () => {
           backgroundColor: 'var(--ide-surface)',
           borderColor: 'var(--ide-border)',
         }}
-        className="h-8 border-b px-3 flex items-center justify-between select-none"
+        className="h-8 border-b px-3 flex items-center justify-between select-none overflow-x-auto scrollbar-none"
       >
-        <div className="flex items-center gap-1.5 h-full">
+        <div className="flex items-center gap-1.5 h-full shrink-0">
           {/* Problems Tab */}
           <button
             onClick={() => setBottomPanelTab('problems')}
-            className={`px-2.5 py-0.5 rounded text-xs transition-colors cursor-pointer flex items-center gap-1.5 ${
+            className={`px-2.5 py-0.5 rounded text-xs transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
               bottomPanelTab === 'problems'
                 ? 'bg-white/10 text-white font-semibold'
                 : 'text-slate-400 hover:text-white'

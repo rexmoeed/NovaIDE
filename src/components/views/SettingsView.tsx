@@ -122,7 +122,7 @@ export const SettingsView: React.FC = () => {
           backgroundColor: 'var(--ide-surface)',
           borderColor: 'var(--ide-border)',
         }}
-        className="border rounded-2xl p-5 flex items-center justify-between shadow-xl"
+        className="border rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl"
       >
         <div className="flex items-center gap-3">
           <div
@@ -131,7 +131,7 @@ export const SettingsView: React.FC = () => {
               borderColor: 'var(--ide-border)',
               color: 'var(--ide-accent)',
             }}
-            className="w-10 h-10 rounded-xl border flex items-center justify-center shadow"
+            className="w-10 h-10 rounded-xl border flex items-center justify-center shadow shrink-0"
           >
             <Settings className="w-5 h-5" />
           </div>
@@ -143,7 +143,7 @@ export const SettingsView: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center flex-wrap gap-2">
           {resetNotice && (
             <span className="text-xs text-emerald-400 font-medium px-3 py-1 rounded bg-emerald-500/10 border border-emerald-500/20 animate-fadeIn">
               {resetNotice}

@@ -298,7 +298,7 @@ function IDEWorkbench() {
             backgroundColor: 'var(--ide-editor-bg)',
             borderColor: 'var(--ide-border)',
           }}
-          className="flex-1 flex flex-col min-w-[320px] md:min-w-[380px] lg:min-w-[440px] h-full self-stretch min-h-0 overflow-hidden relative border rounded-xl shadow-sm"
+          className="flex-1 flex flex-col min-w-0 md:min-w-[320px] lg:min-w-[360px] h-full self-stretch min-h-0 overflow-hidden relative border rounded-xl shadow-sm"
         >
           {activeView === 'welcome' && (
             <WelcomeView

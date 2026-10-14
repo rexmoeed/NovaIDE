@@ -9,34 +9,40 @@ describe('AgentHierarchyService - Dynamic Project Decomposition & Parallel Taski
 
   const mockRootFiles: FileNode[] = [
     {
+      id: 'pkg-json',
       name: 'package.json',
       path: 'package.json',
       type: 'file',
       content: JSON.stringify({ name: 'sample-project', version: '1.0.0' }),
     },
     {
+      id: 'src-folder',
       name: 'src',
       path: 'src',
       type: 'folder',
       children: [
         {
+          id: 'app-tsx',
           name: 'App.tsx',
           path: 'src/App.tsx',
           type: 'file',
           content: 'export default function App() { return <div>App</div>; }',
         },
         {
+          id: 'index-css',
           name: 'index.css',
           path: 'src/index.css',
           type: 'file',
           content: ':root { --color-primary: #6366f1; }',
         },
         {
+          id: 'services-folder',
           name: 'services',
           path: 'src/services',
           type: 'folder',
           children: [
             {
+              id: 'api-ts',
               name: 'api.ts',
               path: 'src/services/api.ts',
               type: 'file',
@@ -53,8 +59,7 @@ describe('AgentHierarchyService - Dynamic Project Decomposition & Parallel Taski
     name: 'E-Commerce Platform',
     description: 'High-scale multi-tenant commerce platform',
     techStack: {
-      framework: 'react',
-      language: 'typescript',
+      frontend: 'react',
       styling: 'tailwind',
     },
     rootFiles: mockRootFiles,

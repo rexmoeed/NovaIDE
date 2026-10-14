@@ -768,11 +768,11 @@ export const AgentWorkspaceView: React.FC = () => {
       {/* 3. SPECIALIST DELIVERABLES & INTERACTIVE PANELS */}
       <div className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden shadow-xl flex flex-col">
         {/* Deliverable Category Navigation Tabs */}
-        <div className="h-10 bg-slate-950 border-b border-slate-800 px-4 flex items-center justify-between">
-          <div className="flex items-center gap-1 h-full">
+        <div className="h-10 bg-slate-950 border-b border-slate-800 px-4 flex items-center justify-between overflow-x-auto scrollbar-none">
+          <div className="flex items-center gap-1 h-full shrink-0">
             <button
               onClick={() => setActiveArtifactTab('brief')}
-              className={`h-full px-3 text-xs font-medium flex items-center gap-1.5 border-b-2 transition-colors ${
+              className={`h-full px-3 text-xs font-medium flex items-center gap-1.5 border-b-2 transition-colors shrink-0 whitespace-nowrap ${
                 activeArtifactTab === 'brief'
                   ? 'border-indigo-500 text-white bg-slate-900/40'
                   : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -784,7 +784,7 @@ export const AgentWorkspaceView: React.FC = () => {
 
             <button
               onClick={() => setActiveArtifactTab('design')}
-              className={`h-full px-3 text-xs font-medium flex items-center gap-1.5 border-b-2 transition-colors ${
+              className={`h-full px-3 text-xs font-medium flex items-center gap-1.5 border-b-2 transition-colors shrink-0 whitespace-nowrap ${
                 activeArtifactTab === 'design'
                   ? 'border-cyan-500 text-white bg-slate-900/40'
                   : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -796,7 +796,7 @@ export const AgentWorkspaceView: React.FC = () => {
 
             <button
               onClick={() => setActiveArtifactTab('architecture')}
-              className={`h-full px-3 text-xs font-medium flex items-center gap-1.5 border-b-2 transition-colors ${
+              className={`h-full px-3 text-xs font-medium flex items-center gap-1.5 border-b-2 transition-colors shrink-0 whitespace-nowrap ${
                 activeArtifactTab === 'architecture'
                   ? 'border-amber-500 text-white bg-slate-900/40'
                   : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -808,7 +808,7 @@ export const AgentWorkspaceView: React.FC = () => {
 
             <button
               onClick={() => setActiveArtifactTab('code')}
-              className={`h-full px-3 text-xs font-medium flex items-center gap-1.5 border-b-2 transition-colors ${
+              className={`h-full px-3 text-xs font-medium flex items-center gap-1.5 border-b-2 transition-colors shrink-0 whitespace-nowrap ${
                 activeArtifactTab === 'code'
                   ? 'border-blue-500 text-white bg-slate-900/40'
                   : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -820,7 +820,7 @@ export const AgentWorkspaceView: React.FC = () => {
 
             <button
               onClick={() => setActiveArtifactTab('qa')}
-              className={`h-full px-3 text-xs font-medium flex items-center gap-1.5 border-b-2 transition-colors ${
+              className={`h-full px-3 text-xs font-medium flex items-center gap-1.5 border-b-2 transition-colors shrink-0 whitespace-nowrap ${
                 activeArtifactTab === 'qa'
                   ? 'border-emerald-500 text-white bg-slate-900/40'
                   : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -832,7 +832,7 @@ export const AgentWorkspaceView: React.FC = () => {
 
             <button
               onClick={() => setActiveArtifactTab('contracts')}
-              className={`h-full px-3 text-xs font-medium flex items-center gap-1.5 border-b-2 transition-colors ${
+              className={`h-full px-3 text-xs font-medium flex items-center gap-1.5 border-b-2 transition-colors shrink-0 whitespace-nowrap ${
                 activeArtifactTab === 'contracts'
                   ? 'border-purple-500 text-white bg-slate-900/40'
                   : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -843,7 +843,7 @@ export const AgentWorkspaceView: React.FC = () => {
             </button>
           </div>
 
-          <span className="text-[11px] font-mono text-slate-500">
+          <span className="text-[11px] font-mono text-slate-500 hidden xl:inline shrink-0 ml-2">
             Workspace: {activeProject.name}
           </span>
         </div>

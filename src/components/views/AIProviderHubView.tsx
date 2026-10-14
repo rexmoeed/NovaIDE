@@ -233,10 +233,10 @@ export const AIProviderHubView: React.FC<{ onClose?: () => void }> = ({ onClose 
       )}
 
       {/* Main Workspace with Tabs */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
         {/* Navigation Sidebar */}
-        <div className="w-56 bg-slate-900 border-r border-slate-800 p-3 flex flex-col gap-1 shrink-0 overflow-y-auto">
-          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 py-1 mb-1">
+        <div className="w-full md:w-56 bg-slate-900 border-b md:border-b-0 md:border-r border-slate-800 p-2 md:p-3 flex md:flex-col flex-row overflow-x-auto md:overflow-y-auto gap-1 shrink-0 scrollbar-none">
+          <div className="hidden md:block text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 py-1 mb-1">
             Provider Management
           </div>
 
@@ -256,7 +256,7 @@ export const AIProviderHubView: React.FC<{ onClose?: () => void }> = ({ onClose 
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-2.5 transition-all cursor-pointer ${
+                className={`text-left px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-2.5 transition-all cursor-pointer shrink-0 whitespace-nowrap md:w-full ${
                   isSelected
                     ? 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-600/20'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
@@ -268,7 +268,7 @@ export const AIProviderHubView: React.FC<{ onClose?: () => void }> = ({ onClose 
             );
           })}
 
-          <div className="mt-auto p-3 bg-slate-950/60 border border-slate-800 rounded-xl flex flex-col gap-1.5 text-[11px] text-slate-400">
+          <div className="hidden md:flex mt-auto p-3 bg-slate-950/60 border border-slate-800 rounded-xl flex-col gap-1.5 text-[11px] text-slate-400">
             <div className="flex items-center gap-1.5 font-bold text-slate-200">
               <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
               <span>Zero Leakage</span>
