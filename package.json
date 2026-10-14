@@ -2,6 +2,8 @@
   "name": "nova-ide",
   "private": true,
   "version": "1.0.0",
+  "description": "NovaIDE - Autonomous AI Software Engineering Studio",
+  "author": "Nova IDE Team",
   "type": "module",
   "main": "dist-electron/main.cjs",
   "scripts": {
@@ -14,7 +16,8 @@
     "test": "vitest run",
     "build:electron": "esbuild electron/main.ts electron/preload.ts --bundle --platform=node --format=cjs --outdir=dist-electron --out-extension:.js=.cjs --external:electron",
     "electron": "npm run build:electron && electron .",
-    "electron:build": "npm run build && npm run build:electron && electron-builder --win"
+    "electron:build": "npm run build && npm run build:electron && electron-builder --win",
+    "electron:build:dir": "npm run build && npm run build:electron && electron-builder --win --dir"
   },
   "build": {
     "appId": "com.nova.ide",
@@ -26,6 +29,13 @@
       "dist/**/*",
       "dist-electron/**/*"
     ],
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "NovaIDE"
+    },
     "win": {
       "target": [
         "nsis",
