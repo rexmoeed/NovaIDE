@@ -33,6 +33,7 @@ import { ProductionWatchdogView } from './components/views/ProductionWatchdogVie
 import { VoiceCodingModal } from './components/modals/VoiceCodingModal';
 import { CloneRepoModal } from './components/modals/CloneRepoModal';
 import { CloseProjectModal } from './components/modals/CloseProjectModal';
+import { OpenFolderModal } from './components/modals/OpenFolderModal';
 import { CursorComposerModal } from './components/cursor/CursorComposerModal';
 import { CursorRulesModal } from './components/cursor/CursorRulesModal';
 import { useCommandInitializer } from './hooks/useCommandInitializer';
@@ -61,6 +62,8 @@ function IDEWorkbench() {
     setIsCloneModalOpen,
     isCloseModalOpen,
     setIsCloseModalOpen,
+    isOpenFolderModalOpen,
+    setIsOpenFolderModalOpen,
     confirmCloseProject,
     openLocalFolder,
     activeProject,
@@ -450,6 +453,16 @@ function IDEWorkbench() {
         }}
         onDiscardAndClose={() => {
           confirmCloseProject(false);
+        }}
+      />
+
+      {/* In-App Zero-Native-Dialog Open Folder Modal */}
+      <OpenFolderModal
+        isOpen={isOpenFolderModalOpen}
+        onClose={() => setIsOpenFolderModalOpen(false)}
+        onSelectFolder={async (selectedPath) => {
+          await openLocalFolder(selectedPath);
+          setIsOpenFolderModalOpen(false);
         }}
       />
 

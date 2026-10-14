@@ -24,52 +24,37 @@ class DesktopBridgeService implements IDesktopAPI {
     this.currentWorkspacePath = path;
   }
 
-  // 1. Directory Picker
+  private folderPickerHandler: (() => Promise<string | null>) | null = null;
+  private filePickerHandler: (() => Promise<string | null>) | null = null;
+
+  public registerFolderPicker(handler: () => Promise<string | null>) {
+    this.folderPickerHandler = handler;
+  }
+
+  public registerFilePicker(handler: () => Promise<string | null>) {
+    this.filePickerHandler = handler;
+  }
+
+  // 1. Directory Picker (Zero native browser dialogs)
   public async openDirectoryDialog(): Promise<string | null> {
     if (this.isElectron && (window as any).desktopAPI?.openDirectoryDialog) {
       return (window as any).desktopAPI.openDirectoryDialog();
     }
-
-    // Try modern browser File System Access API if supported
-    if (typeof window !== 'undefined' && 'showDirectoryPicker' in window) {
-      try {
-        const handle = await (window as any).showDirectoryPicker({ mode: 'readwrite' });
-        if (handle && handle.name) {
-          return handle.name;
-        }
-      } catch (err: any) {
-        if (err.name !== 'AbortError') {
-          console.warn('showDirectoryPicker error:', err);
-        }
-      }
+    if (this.folderPickerHandler) {
+      return await this.folderPickerHandler();
     }
-
-    // Fallback: prompt for local path
-    const entered = prompt('Enter project directory path on machine:', this.currentWorkspacePath || '.');
-    return entered ? entered.trim() : null;
+    return null;
   }
 
-  // 1c. File Picker
+  // 1c. File Picker (Zero native browser dialogs)
   public async openFileDialog(): Promise<string | null> {
     if (this.isElectron && (window as any).desktopAPI?.openFileDialog) {
       return (window as any).desktopAPI.openFileDialog();
     }
-
-    if (typeof window !== 'undefined' && 'showOpenFilePicker' in window) {
-      try {
-        const [handle] = await (window as any).showOpenFilePicker();
-        if (handle && handle.name) {
-          return handle.name;
-        }
-      } catch (err: any) {
-        if (err.name !== 'AbortError') {
-          console.warn('showOpenFilePicker error:', err);
-        }
-      }
+    if (this.filePickerHandler) {
+      return await this.filePickerHandler();
     }
-
-    const entered = prompt('Enter file path to open in editor:', 'src/App.tsx');
-    return entered ? entered.trim() : null;
+    return null;
   }
 
   // 1b. Inspect Path (Existence & Conflict Detection)

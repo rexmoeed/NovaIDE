@@ -43,6 +43,7 @@ import {
 import { GitWorkflowService } from '../../services/gitWorkflowService';
 import { useIDE } from '../../context/IDEContext';
 import { MergeConflictModal } from '../modals/MergeConflictModal';
+import { ConfirmDialogModal } from '../modals/ConfirmDialogModal';
 
 export const GitSidebar: React.FC = () => {
   const { openFile, refreshGit } = useIDE() as any;
@@ -105,8 +106,24 @@ export const GitSidebar: React.FC = () => {
   const [prBody, setPrBody] = useState('');
   const [isCreatingPr, setIsCreatingPr] = useState(false);
 
-  // Status message / toast
   const [notification, setNotification] = useState<{ text: string; type: 'info' | 'error' | 'success' } | null>(null);
+
+  // In-app confirmation dialog state (replaces window.confirm)
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText: string;
+    severity: 'danger' | 'warning' | 'info';
+    action: () => Promise<void> | void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    confirmText: 'Confirm',
+    severity: 'warning',
+    action: () => {},
+  });
 
   const showToast = (text: string, type: 'info' | 'error' | 'success' = 'info') => {
     setNotification({ text, type });
@@ -202,21 +219,35 @@ export const GitSidebar: React.FC = () => {
   };
 
   const handleDiscard = async (path: string) => {
-    if (window.confirm(`Safety Warning: Discard changes in "${path}"? Any uncommitted edits in this file will be lost.`)) {
-      await GitWorkflowService.discard(path);
-      loadAll();
-      refreshGit?.();
-      showToast(`Discarded changes in ${path}`, 'info');
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Discard Changes',
+      message: `Safety Warning: Discard uncommitted changes in "${path}"? Any edits will be permanently lost.`,
+      confirmText: 'Discard Changes',
+      severity: 'danger',
+      action: async () => {
+        await GitWorkflowService.discard(path);
+        loadAll();
+        refreshGit?.();
+        showToast(`Discarded changes in ${path}`, 'info');
+      },
+    });
   };
 
   const handleDiscardAll = async () => {
-    if (window.confirm('Safety Warning: Discard all unstaged changes across the repository? This cannot be undone.')) {
-      await GitWorkflowService.discardAll();
-      loadAll();
-      refreshGit?.();
-      showToast('Discarded all working tree changes', 'info');
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Discard All Unstaged Changes',
+      message: 'Safety Warning: Discard all unstaged changes across the repository? This cannot be undone.',
+      confirmText: 'Discard All Changes',
+      severity: 'danger',
+      action: async () => {
+        await GitWorkflowService.discardAll();
+        loadAll();
+        refreshGit?.();
+        showToast('Discarded all working tree changes', 'info');
+      },
+    });
   };
 
   // Commit handler
@@ -275,11 +306,29 @@ export const GitSidebar: React.FC = () => {
   };
 
   const handlePush = async (force = false) => {
-    if (force && !window.confirm('Safety Warning: Force pushing will overwrite remote history. Are you sure?')) {
+    if (force) {
+      setConfirmDialog({
+        isOpen: true,
+        title: 'Force Push Warning',
+        message: 'Safety Warning: Force pushing will overwrite remote branch history. Are you sure you want to proceed?',
+        confirmText: 'Force Push',
+        severity: 'danger',
+        action: async () => {
+          setLoading(true);
+          const res = await GitWorkflowService.push('origin', undefined, true);
+          setLoading(false);
+          if (res.success) {
+            showToast('Pushed changes to remote', 'success');
+            loadAll();
+          } else {
+            showToast(res.error || 'Push failed. Check remote configuration.', 'error');
+          }
+        },
+      });
       return;
     }
     setLoading(true);
-    const res = await GitWorkflowService.push('origin', undefined, force);
+    const res = await GitWorkflowService.push('origin', undefined, false);
     setLoading(false);
     if (res.success) {
       showToast('Pushed changes to remote', 'success');
@@ -350,15 +399,22 @@ export const GitSidebar: React.FC = () => {
       showToast('Cannot delete the currently active branch', 'error');
       return;
     }
-    if (window.confirm(`Safety Warning: Delete branch "${branchName}"?`)) {
-      const res = await GitWorkflowService.deleteBranch(branchName);
-      if (res.success) {
-        showToast(`Deleted branch "${branchName}"`, 'info');
-        GitWorkflowService.getBranches().then(setBranches);
-      } else {
-        showToast(res.error || 'Failed to delete branch', 'error');
-      }
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete Branch',
+      message: `Safety Warning: Delete branch "${branchName}"? This branch will be removed from your local repository.`,
+      confirmText: 'Delete Branch',
+      severity: 'danger',
+      action: async () => {
+        const res = await GitWorkflowService.deleteBranch(branchName);
+        if (res.success) {
+          showToast(`Deleted branch "${branchName}"`, 'info');
+          GitWorkflowService.getBranches().then(setBranches);
+        } else {
+          showToast(res.error || 'Failed to delete branch', 'error');
+        }
+      },
+    });
   };
 
   // Stash handlers
@@ -400,16 +456,23 @@ export const GitSidebar: React.FC = () => {
   };
 
   const handleRevert = async (hash: string) => {
-    if (window.confirm(`Safety Warning: Create revert commit for ${hash.slice(0, 7)}?`)) {
-      const res = await GitWorkflowService.revertCommit(hash);
-      if (res.success) {
-        showToast(`Reverted commit ${hash.slice(0, 7)}`, 'success');
-        loadAll();
-        refreshGit?.();
-      } else {
-        showToast(res.error || 'Revert failed', 'error');
-      }
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Revert Commit',
+      message: `Safety Warning: Create revert commit for ${hash.slice(0, 7)}?`,
+      confirmText: 'Revert Commit',
+      severity: 'warning',
+      action: async () => {
+        const res = await GitWorkflowService.revertCommit(hash);
+        if (res.success) {
+          showToast(`Reverted commit ${hash.slice(0, 7)}`, 'success');
+          loadAll();
+          refreshGit?.();
+        } else {
+          showToast(res.error || 'Revert failed', 'error');
+        }
+      },
+    });
   };
 
   // GitHub Auth & Token Handler
@@ -1385,6 +1448,21 @@ export const GitSidebar: React.FC = () => {
           loadAll();
           refreshGit?.();
         }}
+      />
+
+      {/* In-App Confirmation Modal (Replaces window.confirm) */}
+      <ConfirmDialogModal
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmText={confirmDialog.confirmText}
+        severity={confirmDialog.severity}
+        onConfirm={async () => {
+          const act = confirmDialog.action;
+          setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+          await act();
+        }}
+        onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
       />
     </div>
   );

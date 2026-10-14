@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { GitFileDiff, GitDiffHunk, GitDiffLine } from '../../types/gitWorkflow';
 import { GitWorkflowService } from '../../services/gitWorkflowService';
+import { ConfirmDialogModal } from '../modals/ConfirmDialogModal';
 
 interface VisualDiffEditorProps {
   filePath: string;
@@ -38,6 +39,7 @@ export const VisualDiffEditor: React.FC<VisualDiffEditorProps> = ({
   const [aiExplanation, setAiExplanation] = useState<string | null>(null);
   const [isExplaining, setIsExplaining] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isDiscardConfirmOpen, setIsDiscardConfirmOpen] = useState(false);
 
   useEffect(() => {
     loadDiff();
@@ -66,12 +68,15 @@ export const VisualDiffEditor: React.FC<VisualDiffEditorProps> = ({
     loadDiff();
   };
 
-  const handleDiscardAction = async () => {
-    if (window.confirm(`Discard uncommitted changes in ${filePath}? This cannot be undone.`)) {
-      await GitWorkflowService.discard(filePath);
-      loadDiff();
-      onClose?.();
-    }
+  const handleDiscardAction = () => {
+    setIsDiscardConfirmOpen(true);
+  };
+
+  const handleConfirmDiscard = async () => {
+    setIsDiscardConfirmOpen(false);
+    await GitWorkflowService.discard(filePath);
+    loadDiff();
+    onClose?.();
   };
 
   const handleExplainWithAI = async () => {
@@ -422,6 +427,17 @@ export const VisualDiffEditor: React.FC<VisualDiffEditorProps> = ({
           </div>
         )}
       </div>
+
+      <ConfirmDialogModal
+        isOpen={isDiscardConfirmOpen}
+        title="Discard Changes"
+        message={`Are you sure you want to discard uncommitted changes in "${filePath}"? Any edits will be permanently lost.`}
+        confirmText="Discard Changes"
+        cancelText="Cancel"
+        severity="danger"
+        onConfirm={handleConfirmDiscard}
+        onCancel={() => setIsDiscardConfirmOpen(false)}
+      />
     </div>
   );
 };

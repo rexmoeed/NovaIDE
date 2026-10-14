@@ -8,6 +8,7 @@ import { exec, spawn, ChildProcess } from 'child_process';
 import util from 'util';
 import net from 'net';
 import http from 'http';
+import os from 'os';
 import { GoogleGenAI } from '@google/genai';
 import { SecurityAuditEngine } from './src/services/securityAuditEngine';
 
@@ -981,7 +982,112 @@ app.post('/api/fs/inspect-path', async (req: Request, res: Response) => {
       size: stat.size,
     });
   } catch (err: any) {
-    return res.status(500).json({ error: err?.message || 'Failed to inspect path' });
+      return res.status(500).json({ error: err?.message || 'Failed to inspect path' });
+    }
+  });
+
+function getAvailableDrives(): string[] {
+  if (process.platform !== 'win32') return ['/'];
+  const drives: string[] = [];
+  for (let i = 65; i <= 90; i++) {
+    const letter = String.fromCharCode(i);
+    const drivePath = `${letter}:\\`;
+    try {
+      if (fs.existsSync(drivePath)) {
+        drives.push(drivePath);
+      }
+    } catch {
+      // drive inaccessible or not mounted
+    }
+  }
+  return drives.length > 0 ? drives : ['C:\\'];
+}
+
+// 8c. In-App Filesystem Browser for Seamless Project & Folder Opening (Zero Native Popups)
+app.post('/api/fs/browse-dirs', async (req: Request, res: Response) => {
+  const { currentPath } = req.body;
+  const initial = currentPath ? path.resolve(currentPath) : process.cwd();
+
+  try {
+    const stat = await fsPromises.stat(initial).catch(() => null);
+    const targetDir = stat && stat.isDirectory() ? initial : (fs.existsSync(path.dirname(initial)) ? path.dirname(initial) : process.cwd());
+    const entries = await fsPromises.readdir(targetDir, { withFileTypes: true });
+
+    const folders: Array<{ name: string; path: string; hasSubfolders: boolean }> = [];
+    for (const entry of entries) {
+      if (entry.isDirectory()) {
+        if (IGNORED_DIRS.has(entry.name)) continue;
+        const full = path.join(targetDir, entry.name);
+        folders.push({
+          name: entry.name,
+          path: full.replace(/\\/g, '/'),
+          hasSubfolders: true,
+        });
+      }
+    }
+
+    folders.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+
+    const parentDir = path.dirname(targetDir);
+    const isRoot = parentDir === targetDir;
+
+    // Windows or Unix normalized breadcrumbs
+    const normalized = targetDir.replace(/\\/g, '/');
+    const parts = normalized.split('/').filter(Boolean);
+    const breadcrumbs: Array<{ name: string; path: string }> = [];
+
+    let accum = '';
+    if (process.platform === 'win32' && /^[a-zA-Z]:/.test(normalized)) {
+      accum = parts[0];
+      breadcrumbs.push({ name: parts[0], path: accum + '/' });
+      for (let i = 1; i < parts.length; i++) {
+        accum += '/' + parts[i];
+        breadcrumbs.push({ name: parts[i], path: accum });
+      }
+    } else {
+      breadcrumbs.push({ name: '/', path: '/' });
+      for (const p of parts) {
+        accum += '/' + p;
+        breadcrumbs.push({ name: p, path: accum });
+      }
+    }
+
+    const homedir = os.homedir().replace(/\\/g, '/');
+    const shortcuts = [
+      { name: 'Current Project', path: process.cwd().replace(/\\/g, '/') },
+      { name: 'Home', path: homedir },
+      { name: 'Desktop', path: `${homedir}/Desktop` },
+      { name: 'Documents', path: `${homedir}/Documents` },
+      { name: 'Downloads', path: `${homedir}/Downloads` },
+    ].filter(s => {
+      try { return fs.existsSync(s.path); } catch { return false; }
+    });
+
+    return res.json({
+      currentPath: normalized,
+      parentPath: isRoot ? null : parentDir.replace(/\\/g, '/'),
+      isRoot,
+      breadcrumbs,
+      folders,
+      drives: getAvailableDrives().map(d => d.replace(/\\/g, '/')),
+      shortcuts,
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: err?.message || 'Failed to browse directory' });
+  }
+});
+
+// 8d. In-App Directory Creation
+app.post('/api/fs/create-dir', async (req: Request, res: Response) => {
+  const { dirPath } = req.body;
+  if (!dirPath) return res.status(400).json({ error: 'dirPath is required' });
+
+  try {
+    const resolved = path.resolve(dirPath);
+    await fsPromises.mkdir(resolved, { recursive: true });
+    return res.json({ success: true, path: resolved.replace(/\\/g, '/') });
+  } catch (err: any) {
+    return res.status(500).json({ error: err?.message || 'Failed to create directory' });
   }
 });
 

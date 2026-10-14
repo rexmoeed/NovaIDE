@@ -118,6 +118,8 @@ interface IDEContextType {
   cloneRepository: (repoUrl: string, targetDir?: string) => Promise<boolean>;
   isCloneModalOpen: boolean;
   setIsCloneModalOpen: (val: boolean) => void;
+  isOpenFolderModalOpen: boolean;
+  setIsOpenFolderModalOpen: (val: boolean) => void;
   devServerProcess: DevServerProcess | null;
   startDevServer: (command?: string) => Promise<void>;
   stopDevServer: () => Promise<void>;
@@ -370,6 +372,7 @@ export const IDEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [gitProfile, setGitProfile] = useState<GitProfile | null>(null);
   const [isCloseModalOpen, setIsCloseModalOpen] = useState<boolean>(false);
   const [isCloneModalOpen, setIsCloneModalOpen] = useState<boolean>(false);
+  const [isOpenFolderModalOpen, setIsOpenFolderModalOpen] = useState<boolean>(false);
   const [cursorPosition, setCursorPosition] = useState<{ line: number; column: number }>({ line: 1, column: 1 });
 
   // Sync VFS when active project changes
@@ -782,13 +785,13 @@ export const IDEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [devServerProcess, stopDevServer, startDevServer]);
 
-  // Real Workspace Open / Close / Clone System
+  // Real Workspace Open / Close / Clone System (Zero Native Popups)
   const openLocalFolder = useCallback(async (customPath?: string) => {
     let folderPath = customPath;
     if (!folderPath) {
-      folderPath = (await DesktopBridge.openDirectoryDialog()) || undefined;
+      setIsOpenFolderModalOpen(true);
+      return false;
     }
-    if (!folderPath) return false;
 
     try {
       DesktopBridge.setWorkspacePath(folderPath);
@@ -1768,6 +1771,8 @@ export const IDEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         cloneRepository,
         isCloneModalOpen,
         setIsCloneModalOpen,
+        isOpenFolderModalOpen,
+        setIsOpenFolderModalOpen,
         devServerProcess,
         startDevServer,
         stopDevServer,
